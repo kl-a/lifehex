@@ -6,6 +6,7 @@ interface Props {
   values: DimensionScores;
   locked: boolean;
   onAxisTap?: (key: keyof DimensionScores) => void;
+  onAxisHover?: (key: keyof DimensionScores | null) => void;
   onChange?: (key: keyof DimensionScores, value: number) => void;
   activeKey?: keyof DimensionScores | null;
 }
@@ -44,7 +45,7 @@ function valFromPos(svgX: number, svgY: number, dimIdx: number) {
   return Math.min(MAX, Math.max(1, Math.round((proj / R) * MAX)));
 }
 
-export function RadarChart({ values, locked, onAxisTap, onChange, activeKey }: Props) {
+export function RadarChart({ values, locked, onAxisTap, onAxisHover, onChange, activeKey }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   // track whether the pointer moved enough to count as a drag vs a tap
@@ -162,7 +163,7 @@ export function RadarChart({ values, locked, onAxisTap, onChange, activeKey }: P
         );
       })}
 
-      {/* Axis labels — pointerEvents none so they don't interfere with drag */}
+      {/* Axis labels */}
       {DIMENSIONS.map((d, i) => {
         const a = axisAngle(i);
         const lx = CX + Math.cos(a) * LABEL_R;
@@ -172,7 +173,17 @@ export function RadarChart({ values, locked, onAxisTap, onChange, activeKey }: P
         const isActive = d.key === activeKey;
 
         return (
-          <g key={d.key} style={{ pointerEvents: 'none' }}>
+          <g key={d.key} style={{ cursor: 'default' }}
+            onMouseEnter={() => onAxisHover?.(d.key)}
+            onMouseLeave={() => onAxisHover?.(null)}
+          >
+            {/* Invisible hit area so hover works even between the two text lines */}
+            <rect
+              x={anchor === 'end' ? lx - 40 : anchor === 'start' ? lx : lx - 20}
+              y={ly - 2}
+              width={40} height={18}
+              fill="transparent"
+            />
             <text x={lx} y={ly + 3}
               textAnchor={anchor}
               fontFamily="Nunito, sans-serif" fontWeight="700" fontSize={7}

@@ -78,12 +78,12 @@ const TL_PAD = { l: 4, r: 4, t: 6, b: 6 };
 const TL_PLOT_W = TL_W - TL_PAD.l - TL_PAD.r;
 const TL_PLOT_H = TL_H - TL_PAD.t - TL_PAD.b;
 const TL_MID_Y = TL_PAD.t + TL_PLOT_H / 2;
-const TL_START_H = 8; const TL_END_H = 26;
+const TL_START_H = 8; const TL_END_H = 24; // 8am → midnight
 const TL_RANGE_MS = (TL_END_H - TL_START_H) * 60 * 60 * 1000;
 const TL_BAR_W = 6;
 const TL_Y_LABEL_W = 18;
 const TL_Y_MARKS = [10, 5, 1];
-const TL_X_HOURS = [8, 12, 16, 20, 26];
+const TL_X_HOURS = [8, 12, 16, 20, 24];
 
 function tlMoodY(mood: number) { return TL_PAD.t + ((10 - mood) / 10) * TL_PLOT_H; }
 function tlXtoSvg(h: number) { return TL_PAD.l + ((h - TL_START_H) / (TL_END_H - TL_START_H)) * TL_PLOT_W; }
@@ -137,10 +137,19 @@ function MoodTimeline({ sessions }: { sessions: Session[] }) {
           </div>
         )}
       </div>
-      <div className="relative mt-1" style={{ marginLeft: TL_Y_LABEL_W + 4, height: 12 }}>
+      <div className="relative mt-1" style={{ marginLeft: TL_Y_LABEL_W + 4, height: 30 }}>
         {TL_X_HOURS.map((h, i) => {
           const pct = ((h - TL_START_H) / (TL_END_H - TL_START_H)) * 100;
-          return <span key={h} style={{ position: 'absolute', left: `${pct}%`, transform: i === 0 ? 'none' : i === TL_X_HOURS.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)', fontSize: 9, fontWeight: 600, fontFamily: 'Nunito, sans-serif', color: 'rgba(155,137,196,0.6)' }}>{tlFmtH(h)}</span>;
+          const baseTranslate = i === 0 ? 'none' : i === TL_X_HOURS.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)';
+          return (
+            <span key={h} style={{
+              position: 'absolute', left: `${pct}%`, top: 0,
+              writingMode: 'vertical-lr',
+              transform: baseTranslate,
+              fontSize: 9, fontWeight: 600, fontFamily: 'Nunito, sans-serif',
+              color: 'rgba(155,137,196,0.6)',
+            }}>{tlFmtH(h)}</span>
+          );
         })}
       </div>
     </div>
@@ -152,6 +161,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
   const { sessions, addSession, removeSession } = useHistoryStore();
   const { dayRecord } = useDayStore();
   const [activeDimKey, setActiveDimKey] = useState<keyof DimensionScores | null>(null);
+  const [hoveredDimKey, setHoveredDimKey] = useState<keyof DimensionScores | null>(null);
   const [confirmedZone, setConfirmedZone] = useState<'green' | 'amber' | 'red'>('green');
 
   const now = new Date();
@@ -163,6 +173,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
 
   const todaySessions = sessions.filter((s) => s.timestamp.slice(0, 10) === isoDate(now));
   const activeDim = activeDimKey ? DIMENSIONS.find((d) => d.key === activeDimKey) ?? null : null;
+  const hoveredDim = hoveredDimKey ? DIMENSIONS.find((d) => d.key === hoveredDimKey) ?? null : null;
 
   const isWeekday = now.getDay() >= 1 && now.getDay() <= 5;
   const mealsLogged = dayRecord.meals.filter((m) => m.logged).length;
@@ -271,7 +282,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
         style={{ gridTemplateColumns: '1fr 190px 1fr' }}
       >
         {/* LEFT: Wheel of Life */}
-        <div className="card-indigo flex flex-col min-h-0">
+        <div className="card-indigo flex flex-col min-h-0 relative">
           <div className="flex justify-between items-center mb-2 flex-shrink-0">
             <span className="text-[11px] font-bold uppercase tracking-widest text-star-gold">Wheel of Life</span>
             <span className="text-[10px] text-muted-purple">tap to {locked ? 'inspect' : 'adjust'}</span>
@@ -282,10 +293,22 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               values={dimensions}
               locked={locked}
               onAxisTap={handleAxisTap}
+              onAxisHover={setHoveredDimKey}
               onChange={locked ? undefined : setDimension}
               activeKey={activeDimKey}
             />
           </div>
+          {/* Floating tooltip card — overlays chart, label-hover only, no layout shift */}
+          {hoveredDim && (
+            <div
+              className="absolute left-4 right-4 z-10 pointer-events-none rounded-lg px-3 py-2"
+              style={{ bottom: 38, background: 'rgba(22,33,62,0.97)', border: '1px solid rgba(155,137,196,0.4)', boxShadow: '0 4px 14px rgba(0,0,0,0.45)' }}
+            >
+              <span className="font-bold text-[10px] text-star-gold">{hoveredDim.label} — </span>
+              <span className="text-[10px] text-muted-purple">{hoveredDim.desc}</span>
+            </div>
+          )}
+          {/* Legend — always visible */}
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 justify-center mt-1 flex-shrink-0">
             {DIMENSIONS.map((d) => (
               <span key={d.key} className="text-[9px] text-muted-purple">
@@ -309,6 +332,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               disabled={locked}
               emojiForValue={MOOD_EMOJI}
               vertical
+              tooltip="Your overall emotional tone right now — from depleted (1) to elated (10)."
             />
             <MoodSlider
               label="Energy"
@@ -317,6 +341,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               disabled={locked}
               emojiForValue={ENERGY_EMOJI}
               vertical
+              tooltip="Physical and mental fuel available — from completely drained (1) to fully charged (10)."
             />
             <MoodSlider
               label="Reg"
@@ -325,20 +350,19 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               disabled={locked}
               emojiForValue={REGULATION_EMOJI}
               vertical
+              tooltip="Emotional regulation — how grounded and in control you feel, from dysregulated (1) to centered (10)."
             />
           </div>
-          {/* Mini mood timeline (locked) */}
-          {locked && todaySessions.length > 0 && (
-            <div className="flex-shrink-0 mt-2 pt-2 border-t border-muted-purple/15">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-muted-purple mb-1">Mood Today</div>
-              <MoodTimeline sessions={todaySessions} />
-            </div>
-          )}
+          {/* Mini mood timeline — always visible */}
+          <div className="flex-shrink-0 mt-2 pt-2 border-t border-muted-purple/15">
+            <div className="text-[9px] font-bold uppercase tracking-widest text-muted-purple mb-1">Mood Today</div>
+            <MoodTimeline sessions={todaySessions} />
+          </div>
         </div>
 
         {/* RIGHT: Checklist + sessions + symptoms */}
         <div className="min-h-0 overflow-y-auto flex flex-col gap-3 pr-1" style={{ scrollbarWidth: 'thin' }}>
-          <DailyChecklist />
+          <DailyChecklist isLuteal={phaseInfo.phase === 'luteal'} />
 
           {todaySessions.length > 0 && (
             <div className="card-indigo">
@@ -389,14 +413,24 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ duration: 0.22, ease: 'easeOut' }}
-              className="card-indigo w-full max-w-2xl max-h-[60vh] overflow-y-auto rounded-b-none"
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={{ top: 0, bottom: 0.2 }}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 80 || info.velocity.y > 400) setActiveDimKey(null);
+              }}
+              className="card-indigo w-full max-w-2xl flex flex-col h-[78vh]"
               style={{ borderTop: '2px solid #9b89c4', borderRadius: '8px 8px 0 0' }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-center mb-4">
-                <div className="w-8 h-1 rounded-full bg-muted-purple/50" />
+              {/* Drag handle */}
+              <div className="flex justify-center pb-3 flex-shrink-0" style={{ cursor: 'grab' }}>
+                <div className="w-10 h-1 rounded-full bg-muted-purple/50" />
               </div>
-              <DimPanel dim={activeDim} dimensions={dimensions} onClose={() => setActiveDimKey(null)} />
+              {/* Scrollable content */}
+              <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+                <DimPanel dim={activeDim} dimensions={dimensions} onClose={() => setActiveDimKey(null)} />
+              </div>
             </motion.div>
           </motion.div>
         )}

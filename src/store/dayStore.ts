@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { DayRecord, MealLog } from '../types';
 import { v4 as uuid } from 'uuid';
+import { useDayHistoryStore } from './dayHistoryStore';
 
 function todayDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -47,10 +48,14 @@ interface DayStore {
   dayRecord: DayRecord;
   ensureToday: () => void;
   setMedicationTaken: (taken: boolean) => void;
+  setMedicationTime: (iso: string) => void;
   updateMeal: (meal: 'breakfast' | 'lunch' | 'dinner', patch: Partial<MealLog>) => void;
+  setMealTime: (meal: 'breakfast' | 'lunch' | 'dinner', iso: string) => void;
   setLunchBreakTaken: (taken: boolean) => void;
   setGymToday: (v: boolean) => void;
+  setGymTime: (iso: string) => void;
   setAloneTimeToday: (v: boolean) => void;
+  setAloneTimeStart: (iso: string) => void;
   toggleSymptom: (s: string) => void;
   setBrainFog: (v: number | null) => void;
   setWorkingMemoryImpaired: (v: boolean) => void;
@@ -68,7 +73,10 @@ export const useDayStore = create<DayStore>()(
 
       ensureToday: () => {
         const today = todayDate();
-        if (get().dayRecord.date !== today) {
+        const current = get().dayRecord;
+        if (current.date !== today) {
+          // Archive the outgoing day before resetting
+          useDayHistoryStore.getState().archiveDay(current);
           set({ dayRecord: defaultDayRecord(today) });
         }
       },
@@ -83,6 +91,11 @@ export const useDayStore = create<DayStore>()(
           },
         })),
 
+      setMedicationTime: (iso) =>
+        set((s) => ({
+          dayRecord: { ...s.dayRecord, medicationTime: iso, updated_at: new Date().toISOString() },
+        })),
+
       updateMeal: (meal, patch) =>
         set((s) => ({
           dayRecord: {
@@ -95,6 +108,17 @@ export const useDayStore = create<DayStore>()(
                     loggedTime: patch.logged && !m.logged ? new Date().toISOString() : m.loggedTime,
                   }
                 : m
+            ),
+            updated_at: new Date().toISOString(),
+          },
+        })),
+
+      setMealTime: (meal, iso) =>
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            meals: s.dayRecord.meals.map((m) =>
+              m.meal === meal ? { ...m, loggedTime: iso } : m
             ),
             updated_at: new Date().toISOString(),
           },
@@ -120,6 +144,11 @@ export const useDayStore = create<DayStore>()(
           },
         })),
 
+      setGymTime: (iso) =>
+        set((s) => ({
+          dayRecord: { ...s.dayRecord, gymTime: iso, updated_at: new Date().toISOString() },
+        })),
+
       setAloneTimeToday: (v) =>
         set((s) => ({
           dayRecord: {
@@ -128,6 +157,11 @@ export const useDayStore = create<DayStore>()(
             aloneTimeStart: v ? new Date().toISOString() : null,
             updated_at: new Date().toISOString(),
           },
+        })),
+
+      setAloneTimeStart: (iso) =>
+        set((s) => ({
+          dayRecord: { ...s.dayRecord, aloneTimeStart: iso, updated_at: new Date().toISOString() },
         })),
 
       toggleSymptom: (symptom) =>
