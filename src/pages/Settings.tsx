@@ -2,6 +2,8 @@ import { BottomSheet } from '../components/BottomSheet';
 import { useSettingsStore } from '../store/settingsStore';
 import { useHistoryStore } from '../store/historyStore';
 import { useCycleStore } from '../store/cycleStore';
+import { useDayStore } from '../store/dayStore';
+import { useDayHistoryStore } from '../store/dayHistoryStore';
 import { exportJSON } from '../utils/moodAggregate';
 
 interface Props {
@@ -25,9 +27,21 @@ export function Settings({ open, onClose }: Props) {
   const { expectedCycleLength, expectedPeriodLength, driveConnected, setExpectedCycleLength, setExpectedPeriodLength, setDriveConnected } = useSettingsStore();
   const { sessions } = useHistoryStore();
   const { cycles } = useCycleStore();
+  const { dayRecord } = useDayStore();
+  const { dayRecords: dayHistory } = useDayHistoryStore();
 
   function handleExport() {
-    exportJSON(sessions, cycles, { expectedCycleLength, expectedPeriodLength, driveConnected });
+    // Merge today's live record with archived history; today wins on date collision
+    const allDayRecords = [
+      dayRecord,
+      ...dayHistory.filter((r) => r.date !== dayRecord.date),
+    ].sort((a, b) => b.date.localeCompare(a.date));
+
+    exportJSON(sessions, allDayRecords, cycles, {
+      expectedCycleLength,
+      expectedPeriodLength,
+      driveConnected,
+    });
   }
 
   return (

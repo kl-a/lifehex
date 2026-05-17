@@ -6,6 +6,7 @@ interface Props {
   values: DimensionScores;
   locked: boolean;
   onAxisTap?: (key: keyof DimensionScores) => void;
+  onAxisHover?: (key: keyof DimensionScores | null) => void;
   onChange?: (key: keyof DimensionScores, value: number) => void;
   activeKey?: keyof DimensionScores | null;
 }
@@ -14,7 +15,7 @@ const V = 320;          // viewBox size (SVG units)
 const CX = V / 2;
 const CY = V / 2;
 const R = 104;          // outer radius of the plot
-const LABEL_R = R + 30; // radius at which labels are drawn
+const LABEL_R = R + 22; // radius at which labels are drawn
 const MAX = 10;
 const N = DIMENSIONS.length;
 const HIT_R = 22;       // pointer hit radius for handles (SVG units)
@@ -44,7 +45,7 @@ function valFromPos(svgX: number, svgY: number, dimIdx: number) {
   return Math.min(MAX, Math.max(1, Math.round((proj / R) * MAX)));
 }
 
-export function RadarChart({ values, locked, onAxisTap, onChange, activeKey }: Props) {
+export function RadarChart({ values, locked, onAxisTap, onAxisHover, onChange, activeKey }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   // track whether the pointer moved enough to count as a drag vs a tap
@@ -116,6 +117,8 @@ export function RadarChart({ values, locked, onAxisTap, onChange, activeKey }: P
       ref={svgRef}
       viewBox={`0 0 ${V} ${V}`}
       width="100%"
+      height="100%"
+      preserveAspectRatio="xMidYMid meet"
       style={{ display: 'block', touchAction: 'none', overflow: 'visible', cursor: locked ? 'default' : 'pointer' }}
       onPointerDown={onDown}
       onPointerMove={onMove}
@@ -160,7 +163,7 @@ export function RadarChart({ values, locked, onAxisTap, onChange, activeKey }: P
         );
       })}
 
-      {/* Axis labels — pointerEvents none so they don't interfere with drag */}
+      {/* Axis labels */}
       {DIMENSIONS.map((d, i) => {
         const a = axisAngle(i);
         const lx = CX + Math.cos(a) * LABEL_R;
@@ -170,15 +173,25 @@ export function RadarChart({ values, locked, onAxisTap, onChange, activeKey }: P
         const isActive = d.key === activeKey;
 
         return (
-          <g key={d.key} style={{ pointerEvents: 'none' }}>
-            <text x={lx} y={ly + 4}
+          <g key={d.key} style={{ cursor: 'default' }}
+            onMouseEnter={() => onAxisHover?.(d.key)}
+            onMouseLeave={() => onAxisHover?.(null)}
+          >
+            {/* Invisible hit area so hover works even between the two text lines */}
+            <rect
+              x={anchor === 'end' ? lx - 40 : anchor === 'start' ? lx : lx - 20}
+              y={ly - 2}
+              width={40} height={18}
+              fill="transparent"
+            />
+            <text x={lx} y={ly + 3}
               textAnchor={anchor}
-              fontFamily="Nunito, sans-serif" fontWeight="700" fontSize={10}
+              fontFamily="Nunito, sans-serif" fontWeight="700" fontSize={7}
               fill={isActive ? '#ffe066' : locked ? '#9b89c4' : '#fdfcff'}
             >{d.short}</text>
-            <text x={lx} y={ly + 20}
+            <text x={lx} y={ly + 14}
               textAnchor={anchor}
-              fontFamily="Nunito, sans-serif" fontWeight="800" fontSize={13}
+              fontFamily="Nunito, sans-serif" fontWeight="800" fontSize={10}
               fill={isActive ? '#ffe066' : locked ? '#7a6fa0' : '#ffe066'}
             >{values[d.key]}</text>
           </g>

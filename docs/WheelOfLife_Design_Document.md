@@ -22,7 +22,7 @@ The app is browser-only in v1. Time-triggered routine prompts appear as in-app b
 |---|---|---|
 | Framework | React + Vite + TypeScript | Same as Jar of Stars; proven scaffold |
 | Styling | Tailwind CSS + custom pixel CSS | Utility-first with pixel-art overrides |
-| Charts | **Recharts** | Radar chart + line graphs; React-native, no canvas juggling |
+| Charts | **Custom SVG RadarChart** (inline) + Recharts for Dashboard line/bar graphs | Full control over drag, hit-testing, and label positioning on the radar |
 | Animation | Framer Motion | Same as Jar of Stars |
 | State management | Zustand | Same as Jar of Stars |
 | Persistence | localStorage (primary) | JSON blob, same pattern as JoS |
@@ -32,6 +32,35 @@ The app is browser-only in v1. Time-triggered routine prompts appear as in-app b
 | Auth | Google OAuth (same as Jar of Stars) | Drive sync only |
 
 > ⚠️ **Claude Code note:** Always create an isolated project directory before installing dependencies. Do **not** install packages globally. Use `npm create vite@latest lifehex -- --template react-ts` to scaffold, then `cd lifehex && npm install` inside the project directory. Never run global npm installs.
+
+---
+
+## Browser Layout — IMPORTANT
+
+LifeHex is a **full-browser desktop web app**, not a mobile app and not a centred narrow column. Do **not** constrain the page to 390px or 480px width. Do **not** centre a narrow card in the middle of the screen with Night Sky gutters. The app fills the full browser viewport.
+
+This has been a recurring issue when the app is rebuilt from scratch — previous attempts rendered it as a phone-sized column centred on the page. That is **wrong**. Every screen should fill the full available width and height.
+
+### Layout philosophy
+- Full viewport width and height at all times
+- The Today screen uses a **viewport-height-constrained 3-column grid** — everything fits in a single non-scrolling view above the bottom nav bar with no page-level scroll
+- Think **dashboard**, not phone app
+- The bottom nav bar is the only fixed element; everything above it fills `calc(100dvh - nav_height - page_padding)` exactly
+
+### Viewport height calculation
+`App.tsx` applies `pt-6` (24px) top padding and `pb-20` (80px) bottom padding for the nav bar.  
+Today screen outer container: `height: calc(100dvh - 104px)` — fills exactly the remaining space with no overflow and no scrollbar on the page itself.
+
+### Responsive targets
+| Breakpoint | Behaviour |
+|---|---|
+| Any desktop width | Full 3-column grid, fills viewport |
+| Tablet (≥768px) | Same 3-column grid |
+| Mobile (<768px) | Not a primary target; layout degrades gracefully |
+
+### Bottom nav
+`position: fixed; bottom: 0; width: 100%`  
+Height: `56px` (80px with safe-area padding on touch devices)
 
 ---
 
@@ -162,86 +191,82 @@ The Today screen is structured around four tracking groups. The previous tag chi
 
 ---
 
-### Group 1: Routines (time-triggered in-app banners)
+### Group 1: Routines (emoji-triggered inline cards)
 
-Routines are **not logged tasks** — they are dismissible banners that appear inside the app at configured times of day. They give structure without being punitive if skipped. Prompt times are user-configurable in Settings (default times below).
+Routines are **not logged tasks** — they are guided checklists that give structure without being punitive if skipped. Prompt times are user-configurable. Items are purely visual; checking them off is local React state only (not persisted).
 
-Routine banners appear at the top of the Today screen, above the period strip, when the app is opened after the trigger time. They do not fire if the app is closed — browser-only, no push notifications.
+**How routines are accessed (current implementation):**
 
-**Morning Routine Banner** — default trigger: 9:00am
+Three emoji buttons sit in the top-right corner of the Daily Checklist card header:
 
 ```
-✨ Good morning
-──────────────────────────────
+Daily Checklist     ✨  🍱  🌙
+```
+
+- Tapping an emoji **toggles** that routine card open/closed inline beneath the checklist header (Framer Motion height animation)
+- Only one routine can be open at a time; tapping a different emoji switches
+- Each routine card has a **`···` (3-dot) button** that expands an inline time picker to configure when that routine auto-shows (writes to `settingsStore`)
+
+**Auto-show trigger (future / partially scaffolded):** Times are stored in `settingsStore` (`morningRoutineTime`, `lunchNudgeTime`, `bedtimeRoutineTime`) but time-based auto-pop on app open is not yet wired up — routines are currently always manually triggered via the emoji buttons.
+
+**Morning Routine** ✨ — default trigger: 9:00am
+
+```
+✨ Morning Routine                    ···  ✕
 □ Don't touch your phone yet
 □ Clean up / make bed
 □ Morning journal
 □ Eat breakfast
 □ Sit at a window for 5 minutes
 □ Say hello to parents / John
-□ Take meds (weekdays only)
+□ Take meds
 □ Start your day
-──────────────────────────────
-[ Dismiss ]
 ```
 
-If today is a **luteal phase day** (days 17–27), the banner prepends one line:
-```
-🌙 Luteal phase today — be extra gentle with yourself.
-```
+On luteal phase days the card prepends:  
+`🌙 Luteal phase — be extra gentle with yourself today.`
 
-The morning routine checklist is purely visual — items are not logged. The banner is dismissed once per day.
-
-**Lunch Break Banner** — default trigger: 12:00pm
-
-Appears if the app is opened between 12:00pm and 1:00pm and no lunch meal has been logged yet.
+**Lunch Break** 🍱 — default trigger: 12:00pm
 
 ```
-🍱 Lunch break time.
-Step away from your desk — you have until 1pm.
-Close the laptop.
-──────────────────────────────
-[ I'm on my break ]
+🍱 Lunch Break                        ···  ✕
+□ Step away from your desk
+□ Close the laptop
+[ I'm on my break ]   ← only logged action; sets lunchBreakTaken: true
 ```
 
-Tapping "I'm on my break" is the only logged action from any routine. It records `lunchBreakTaken: true` and `lunchBreakTime: timestamp` on the day record.
-
-**Bedtime Routine Banner** — default trigger: 10:00pm
-
-Appears when the app is opened after trigger time in the evening.
+**Wind Down** 🌙 — default trigger: 10:00pm
 
 ```
-🌙 Time to wind down.
-──────────────────────────────
+🌙 Wind Down                          ···  ✕
 □ Screens away
 □ Say goodnight to everyone
 □ Brush teeth
 □ Read book or manga
 □ Lights out
-──────────────────────────────
-[ Dismiss ]
 ```
 
 ---
 
 ### Group 2: Daily Checklist (always interactive, logged with timestamp)
 
-A card section always visible on the Today screen — not gated by the lock/unlock state. Each item can be checked off at any time. Checking logs the time. State resets at midnight.
+A card section always visible in the right column of the Today screen — not gated by the lock/unlock state. Each item can be checked off at any time. Checking logs the current time as an ISO string. State persists all day; at midnight `ensureToday()` archives the record and resets.
 
 | Item | Type | Detail |
 |---|---|---|
 | Medication taken | Toggle (weekdays only) | Logs time tapped. On weekends: greyed out with "rest day" label |
 | Breakfast | Toggle + expand | Expands: optional note ("what was it?") + checkbox "proper break — not at desk" |
-| Lunch | Toggle + expand | Same as breakfast. Links to lunch break banner acknowledgement |
+| Lunch | Toggle + expand | Same as breakfast + "stepped away from desk" checkbox (`lunchBreakTaken`) |
 | Dinner | Toggle + expand | Same as breakfast |
 | Gym today | Toggle | Logs time tapped |
-| Alone time today | Toggle | Logs time tapped. On check: "Start a timer?" prompt with in-app configurable countdown |
+| Alone time today | Toggle | Logs time tapped |
 
 **Checklist UI:**
-- Each row: pixel-art checkbox (unchecked: `border: 2px solid #9b89c4`; checked: Mint Green fill with pixel checkmark icon)
-- Timestamp appears inline after checking in Nunito 12px: "✓ 9:23am"
-- Meal rows expand on tap via Framer Motion height animation to show note field and "proper break" toggle
-- Alone time row shows a small timer icon after checking that opens a simple countdown timer panel
+- Each row: pixel-art checkbox (unchecked: `border: 2px solid #9b89c4`; checked: Mint Green fill with SVG checkmark)
+- Timestamp appears inline after checking: `✓ 9:23am` in Nunito 11px Mint Green
+- **Time editing:** A pencil `✏` button appears next to the timestamp. Clicking opens an inline `<input type="time">` pre-filled with the logged time. Press Enter or blur to save the corrected time; Escape cancels. This lets you backfill the actual time if you forgot to check the box in the moment.
+- Meal rows expand on click via Framer Motion height animation to show note field and "proper break" toggle
+- **Routine triggers:** Three emoji buttons (✨ 🍱 🌙) in the card header open routine cards inline (see Group 1)
 
 ---
 
@@ -568,36 +593,91 @@ interface Settings {
 
 ### 1. Today Screen
 
-The primary daily interaction screen. Scrollable. Fixed bottom nav.
+The primary daily interaction screen. **Not scrollable at the page level** — everything fits in the viewport. Only the right column scrolls internally. Fixed bottom nav.
 
-Vertical stack order:
+**Three-column grid layout** (see Screen layout spec above for the full diagram):
 
-1. **Routine banner** (conditional — appears at top when time-triggered, dismissible)
-2. **Period strip** (always visible)
-3. **Regulation zone badge** (always visible)
-4. **Lock/Unlock toggle**
-5. **Radar chart** (8-axis, interactive when unlocked)
-6. **Mood slider** (interactive when unlocked)
-7. **Energy slider** (interactive when unlocked)
-8. **Emotional regulation slider** (interactive when unlocked)
-9. **Daily checklist** (always interactive)
-10. **Physical symptoms** (collapsible, always interactive)
+**Top bar (full width, flex-shrink-0):**
+1. Header row — "Today" title + date | Lock button (centred) | current time (right-aligned)
+2. News ticker — scrolling marquee of all 8 dimension short-names and scores
+3. Period strip + Zone badge side by side (period strip flex-1, zone badge w-52)
 
-#### Radar Chart
+**Left column (1fr):** Wheel of Life radar chart
+**Centre column (190px):** State sliders (Mood / Energy / Reg) + Mood timeline
+**Right column (1fr):** Daily Checklist → Sessions list (if any today) → Physical Symptoms
 
-- Built with Recharts `RadarChart`
-- 8 axes clockwise from top: Health & Body, Mental & Wellbeing, Relationships, Family, Work & Career, Creative & Art, Rest & Recovery, Nourishment
-- Scale 0–10, integer snapping only
-- **Locked:** filled polygon Soft Lilac `#c9b8f0`, Muted Purple stroke, `opacity: 0.6`
-- **Unlocked:** filled polygon Mint Green `#b5ead7` at `opacity: 0.5`, Star Gold `#ffe066` stroke, subtle glow `filter: drop-shadow(0 0 4px #b5ead7)`
-- Axis labels in Press Start 2P 8px, abbreviated (e.g. "HEALTH", "MENTAL", "RELATE", "FAMILY", "WORK", "CREATE", "REST", "NOURISH")
-- **Tapping** an axis label or polygon area when unlocked opens the dimension bottom sheet:
-  - Slides up from bottom (see bottom sheet spec)
-  - Dimension name in Press Start 2P 10px, one-line description in Nunito 13px
-  - Integer slider 0–10 for that dimension
-  - **Live radar update:** radar polygon updates in real time as slider drags. Bottom sheet covers only lower ~50% of screen so radar is visible above it. Closing confirms the value — does not revert.
-  - Read-only reference chips below: "Adds ↑" in Mint Green chip style, "Detracts ↓" in Blush Pink chip style. Not interactive. Reference only.
-  - "Done" button closes sheet
+#### Radar Chart (Left Column)
+
+Implemented as a fully custom inline SVG — **not Recharts**. Recharts was abandoned because it doesn't support direct pointer-drag interaction on individual axis handles.
+
+**Geometry:**
+- ViewBox: `320 × 320`. Centre: `(160, 160)`. Outer radius `R = 104`. Label radius `LABEL_R = 126`.
+- 8 axes, evenly spaced at 45°, starting at top (−π/2): Health → Mental → Relationships → Family → Work → Creative → Rest → Nourishment
+- Grid rings drawn at values 2, 4, 6, 8, 10
+- SVG uses `width="100%" height="100%" preserveAspectRatio="xMidYMid meet"` — fills the left column card without distortion
+- Container must NOT have `overflow: hidden` — SVG labels render outside the clip boundary and pointer events would be clipped
+
+**Interaction:**
+- Pointer capture (`setPointerCapture`) on the SVG itself handles all drag/tap events
+- **Drag** a handle dot to change that dimension's value in real time (live polygon update)
+- **Tap** a label or handle to open the dimension detail bottom sheet (`onAxisTap` callback)
+- Tap vs drag distinguished by a 5px movement threshold (`DRAG_THRESHOLD`)
+
+**Visual states:**
+- **Locked:** polygon fill `rgba(201,184,240,0.3)`, stroke `#9b89c4` (Muted Purple)
+- **Unlocked:** polygon fill `rgba(181,234,215,0.35)`, stroke `#ffe066` (Star Gold)
+- Active/dragging handle: radius 11px, fill Star Gold. Active (tapped): radius 8px, fill Star Gold. Idle: radius 6px.
+
+**Labels:**
+- Short name (e.g. "HEALTH") in Nunito Bold 7px — kept small to prevent overflow at LABEL_R = 126
+- Score value below it in Nunito ExtraBold 10px
+- Label `<g>` elements have `pointerEvents: 'auto'` so hover events fire without interfering with drag
+
+**Hover tooltip (label only — not dot handles):**
+- `onMouseEnter` / `onMouseLeave` on label `<g>` elements fire `onAxisHover` callback
+- Dot handles do NOT fire hover events
+- Tooltip renders as an `position: absolute` floating card within the left column card, positioned `bottom: 38px` (above the legend row), with `pointer-events: none` — **no layout shift**
+- Legend row (short name + score for all 8 dims) is always visible beneath the tooltip
+
+**Dimension detail bottom sheet:**
+- Triggered by tap on label or handle
+- `height: 78vh`, `flex flex-col`, `border-radius: 8px 8px 0 0`
+- Drag handle at top; inner content div is `flex-1 overflow-y-auto`
+- Swipe-to-dismiss: Framer Motion `drag="y"` with `dragConstraints={{ top: 0 }}`. Dismissed if `offset.y > 80` or `velocity.y > 400`
+- Shows: dimension name, description, score, Adds ↑ chips (Mint Green), Detracts ↓ chips (Blush Pink)
+- Close button (×) in header
+
+#### State Sliders (Centre Column)
+
+Three **vertical** range sliders stacked side by side, filling the centre column card. Each is a `MoodSlider` component in vertical mode.
+
+**Layout:** `flex gap-3 justify-around` within the column card. Each slider is `flex flex-col items-center h-full`.
+
+**Vertical slider implementation:**
+- CSS class `pixslider-vert`: `writing-mode: vertical-lr; direction: rtl; width: 6px; height: 100%`
+- Emoji position uses **pure CSS calc** — no JavaScript measurement: `top: calc(${pct} * (100% - 18px))` where `pct = (10 - value) / 9`. This is mathematically exact: thumb centre travels from 9px (top, value=10) to (H−9px) (bottom, value=1); emoji top = pct × (H−18px).
+- `transition: top 80ms ease` for smooth emoji movement
+
+**Hover tooltip:** Hovering the label text (not the slider itself) shows a 160px floating card above the label. The tooltip div has `normal-case tracking-normal` to override the parent's `uppercase tracking-widest` CSS so description text renders in normal sentence case.
+
+| Slider | Range | Emojis | Tooltip |
+|---|---|---|---|
+| Mood | 1–10 | 😫→🙁→😶→😄→😆 | "Your overall emotional tone right now…" |
+| Energy | 1–10 | 🪫→😐→⚡ | "Physical and mental fuel available…" |
+| Reg | 1–10 | 🌋→😤→🧘 | "Emotional regulation — how grounded…" |
+
+All three are disabled (opacity 0.5, pointer-events none) when session is locked.
+
+#### Mood Timeline (Centre Column, bottom)
+
+Always visible at the bottom of the centre column card, separated by a faint border. Shows today's locked sessions as a mini sparkline.
+
+- **Time range:** 8:00am → midnight (16-hour window)
+- X-axis: hours [8, 12, 16, 20, 24]; labels rendered with `writing-mode: vertical-lr` to prevent overlap
+- Y-axis: mood 1–10, with grid lines at 1, 5, 10
+- Each session: a vertical bar (Mint Green above midline / Blush Pink below) + Star Gold dot + connected line
+- Hover shows a tooltip with `mood/10 · HH:MM`
+- Empty state: "No sessions today" in muted text
 
 ---
 
@@ -789,51 +869,61 @@ box-shadow: 0px -2px 0px #9b89c4;
 /* No shadow on: plain text, axis labels, icon-only elements, radar chart itself */
 ```
 
-### Screen layout spec — Today screen
+### Screen layout spec — Today screen (full browser, 3-column grid)
+
+The Today screen is a **single non-scrolling viewport**. Everything fits within `calc(100dvh - 104px)` with no page-level scroll. The right column is the only internally-scrollable area.
 
 ```
-┌─────────────────────────────────┐  390px viewport
-│  ROUTINE BANNER        ~auto    │  Conditional. Top of screen. Dismissible.
-│  (morning/lunch/bedtime)        │  Deep Indigo bg, Butter Yellow border
-├─────────────────────────────────┤
-│  PERIOD STRIP          ~72px    │  Full-width, phase-coloured bg
-│  phase + mini bar + moon        │  2px solid <phase-shadow> border-bottom
-├─────────────────────────────────┤
-│  REGULATION BADGE      ~48px    │  Centred pill: ● AMBER  ↺ override
-│                                 │  Always visible (locked and unlocked)
-├─────────────────────────────────┤
-│  LOCK TOGGLE ROW       ~40px    │  Padlock + "Unlock to update" label
-│                                 │  Mint Green unlocked / Muted Purple locked
-├─────────────────────────────────┤
-│                                 │
-│  RADAR CHART          ~320px    │  8-axis, square aspect, 16px side padding
-│                                 │
-├─────────────────────────────────┤
-│  MOOD SLIDER           ~88px    │  Emoji above, slider, numeric below
-├─────────────────────────────────┤
-│  ENERGY SLIDER         ~88px    │  Same layout
-├─────────────────────────────────┤
-│  REGULATION SLIDER     ~96px    │  Same + Nunito 11px subtext below label
-├─────────────────────────────────┤
-│  DAILY CHECKLIST       ~auto    │  Always interactive (not gated by lock)
-│  □ Medication  ✓ 9:23am         │  Pixel checkboxes. Meals expandable.
-│  □ Breakfast □ Lunch □ Dinner   │
-│  □ Gym  □ Alone time            │
-├─────────────────────────────────┤
-│  ▼ Physical symptoms   ~auto    │  Collapsed by default, tap to expand
-│  (chips + optional sliders)     │  "That wasn't me" at bottom of section
-├─────────────────────────────────┤
-│  BOTTOM NAV            ~56px    │  Fixed. Deep Indigo bg.
-│  🌸 Today 📅 Cal 🌙 Cycle 📊   │
-└─────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────┐
+│  HEADER ROW (flex, 3-cell grid: 1fr auto 1fr)                            │
+│  "Today" + date label       Lock button         Current time             │
+├──────────────────────────────────────────────────────────────────────────┤
+│  NEWS TICKER (full width, scrolling marquee of dimension scores)          │
+├──────────────────────────────────────────────────────────────────────────┤
+│  PERIOD STRIP (flex-1)          │  ZONE BADGE (w-52, flex-shrink-0)      │
+│  Phase + cycle day + mini bar   │  ● GREEN / AMBER / RED  ↺ override     │
+├───────────────────┬─────────────┴─────────────┬──────────────────────────┤
+│   LEFT            │   CENTRE    (190px fixed)  │   RIGHT                  │
+│   1fr             │                            │   1fr                    │
+│                   │                            │                          │
+│  ┌─────────────┐  │  ┌─────────────────────┐   │  ┌────────────────────┐ │
+│  │ Wheel of    │  │  │ State               │   │  │ Daily Checklist    │ │
+│  │ Life        │  │  │                     │   │  │ ✨ 🍱 🌙           │ │
+│  │             │  │  │  [Mood] [Enrg] [Reg]│   │  │ □ Medication ✓9am  │ │
+│  │  8-axis     │  │  │  vertical sliders   │   │  │ □ Breakfast ▼      │ │
+│  │  SVG radar  │  │  │  with emoji thumbs  │   │  │ □ Lunch     ▼      │ │
+│  │             │  │  │                     │   │  │ □ Dinner    ▼      │ │
+│  │  (drag      │  │  │  ─────────────────  │   │  │ □ Gym              │ │
+│  │   handles   │  │  │  Mood Today         │   │  │ □ Alone time       │ │
+│  │   to edit)  │  │  │  8am ──────── 12am  │   │  └────────────────────┘ │
+│  │             │  │  │  timeline chart     │   │                          │
+│  └─────────────┘  │  └─────────────────────┘   │  ┌────────────────────┐ │
+│                   │                            │  │ Sessions today     │ │
+│  dimension legend │                            │  │ (if any logged)    │ │
+│  SHORT score ...  │                            │  └────────────────────┘ │
+│                   │                            │                          │
+│  [hover tooltip   │                            │  ┌────────────────────┐ │
+│   floats above    │                            │  │ ▼ Physical         │ │
+│   legend, no      │                            │  │   symptoms         │ │
+│   layout shift]   │                            │  └────────────────────┘ │
+├───────────────────┴────────────────────────────┴──────────────────────────┤
+│  BOTTOM NAV — fixed, full width                                            │
+│  🌸 Today   📅 Calendar   🌙 Cycle   📊 Dashboard                         │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
+
+**Column grid:** `gridTemplateColumns: '1fr 190px 1fr'`  
+**Outer container:** `display: flex; flex-direction: column; height: calc(100dvh - 104px); gap: 8px`  
+**Top compact section:** `flex-shrink: 0` (header + ticker + period/zone row)  
+**3-column grid:** `flex: 1; min-height: 0` — fills remaining height exactly
+
+**Card internal padding:** `card-indigo` = 14px border-radius, 16px padding, Deep Indigo bg  
+**Column overflow:** Left and Centre: `overflow: hidden`. Right: `overflow-y: auto; scrollbar-width: thin`
 
 **Spacing tokens:**
-- Page horizontal padding: `16px`
-- Section gap: `12px`
-- Card internal padding: `12px`
-- Chip gap: `8px`
-- Bottom nav height: `56px` — scrollable content needs `padding-bottom: 72px`
+- Page padding (App.tsx): `pt-6` (24px top) + `pb-20` (80px bottom nav)
+- Column gap: `12px`
+- Card internal padding: `16px` (from `card-indigo` class)
 
 ### Screen layout spec — Calendar screen
 
@@ -850,16 +940,19 @@ box-shadow: 0px -2px 0px #9b89c4;
 └─────────────────────────────────┘
 ```
 
-### Bottom sheet behaviour
+### Bottom sheet behaviour (dimension detail)
 
 ```
-Entry:      Framer Motion y: '100%' → y: 0, duration: 0.25s, easing: easeOut
-Background: Deep Indigo #16213e
-Top border: 2px solid #9b89c4
-Radius:     border-radius: 8px 8px 0 0
-Backdrop:   rgba(26, 26, 46, 0.7) — tap to dismiss
-Max height: 60vh, internally scrollable
-Handle bar: 32px × 4px, border-radius: 2px, colour #9b89c4, centred, 8px from top edge
+Entry:       Framer Motion y: '100%' → y: 0, duration: 0.22s, easing: easeOut
+Background:  Deep Indigo #16213e  (card-indigo class)
+Top border:  2px solid #9b89c4
+Radius:      border-radius: 8px 8px 0 0
+Backdrop:    rgba(26, 26, 46, 0.85) blur(4px) — click to dismiss
+Height:      78vh  (fixed, not max-height — ensures full content visibility)
+Layout:      flex flex-col — handle (flex-shrink-0) + scrollable content (flex-1 overflow-y-auto)
+Handle bar:  40px × 4px, border-radius: 2px, colour #9b89c4/50, centred, 8px gap below top padding
+Swipe close: Framer Motion drag="y" dragConstraints={{ top: 0 }} dragElastic={{ top: 0, bottom: 0.2 }}
+             Dismissed when offset.y > 80px OR velocity.y > 400
 ```
 
 ---
@@ -881,12 +974,46 @@ Settings: gear icon top-right, accessible from any screen.
 
 ---
 
-## Responsive Behaviour
+## Data Persistence
 
-- Mobile-first at 390px (Pixel 7 / iPhone 14)
-- Desktop: max-width 480px centred, Night Sky gutters
-- Radar chart: fluid 280–420px
-- Bottom nav: `position: fixed; bottom: 0`
+All data is stored in browser localStorage via Zustand's `persist` middleware. Nothing is sent to a server. Five separate keys keep concerns isolated and allow independent migration to Google Drive per collection.
+
+### localStorage keys
+
+| Key | Store | Contents | Resets? |
+|---|---|---|---|
+| `lifehex_sessions` | `historyStore.ts` | All locked session snapshots (mood, energy, regulation, dimensions, zone, timestamp) | Never — accumulates indefinitely |
+| `lifehex_day` | `dayStore.ts` | Today's DayRecord — checklist state, meals, symptoms, sleep, "that wasn't me" | Midnight — archived first, then reset |
+| `lifehex_day_history` | `dayHistoryStore.ts` | All past DayRecords, sorted descending by date | Never — accumulates indefinitely |
+| `lifehex_cycles` | `cycleStore.ts` | Period cycle entries (start date, end date, length) | Never |
+| `lifehex_settings` | `settingsStore.ts` | Cycle lengths, routine times, medication toggle, Drive connection state | Never |
+
+### Day archiving
+
+`dayStore.ensureToday()` is called on every app mount and route change. When the stored `dayRecord.date` differs from today's date (i.e. the user opens the app after midnight):
+
+1. The outgoing `DayRecord` is passed to `useDayHistoryStore.getState().archiveDay(record)`
+2. `archiveDay` deduplicates by date (last-write-wins) — safe to call multiple times
+3. A fresh `defaultDayRecord(today)` replaces the current record
+
+This means checklist data is **never lost** — past days accumulate in `lifehex_day_history`.
+
+### Export format (version 2)
+
+Settings → Download JSON produces a file ready for Google Drive migration:
+
+```json
+{
+  "version": 2,
+  "exportedAt": "2026-05-17T10:00:00.000Z",
+  "sessions": [...],
+  "dayRecords": [...],
+  "cycles": [...],
+  "settings": {...}
+}
+```
+
+`dayRecords` includes today's live record merged with all history (today wins on date collision). This matches the Drive sync schema exactly — `importDayRecords()` on `dayHistoryStore` is the hook for the future merge.
 
 ---
 
@@ -896,14 +1023,16 @@ Settings: gear icon top-right, accessible from any screen.
 
 ```json
 {
+  "version": 2,
+  "exportedAt": "ISO timestamp",
   "sessions": [...],
   "dayRecords": [...],
   "cycles": [...],
-  "zoneOverrides": [...],
-  "settings": {...},
-  "exported_at": "ISO timestamp"
+  "settings": {...}
 }
 ```
+
+> `zoneOverrides` are embedded within each `Session` object as `session.zoneOverride` (nullable). Not a separate top-level array.
 
 **Merge strategy (last-write-wins per item by `updated_at`):**
 ```typescript

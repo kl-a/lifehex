@@ -6,24 +6,33 @@ interface SessionStore {
   locked: boolean;
   dimensions: DimensionScores;
   mood: number;
-  tags: string[];
+  energy: number;
+  regulation: number;
   lastSavedISO: string | null;
-  unlock: (prefillDimensions: DimensionScores, prefillMood: number) => void;
+  unlock: (prefillDimensions: DimensionScores, prefillMood: number, prefillEnergy: number, prefillRegulation: number) => void;
   lock: () => void;
   setDimension: (key: keyof DimensionScores, value: number) => void;
   setMood: (v: number) => void;
-  toggleTag: (id: string) => void;
+  setEnergy: (v: number) => void;
+  setRegulation: (v: number) => void;
 }
 
 export const useSessionStore = create<SessionStore>()((set) => ({
   locked: true,
   dimensions: { ...DEFAULT_DIMENSIONS },
   mood: 5,
-  tags: [],
+  energy: 5,
+  regulation: 5,
   lastSavedISO: null,
 
-  unlock: (prefillDimensions, prefillMood) =>
-    set({ locked: false, dimensions: { ...prefillDimensions }, mood: prefillMood, tags: [] }),
+  unlock: (prefillDimensions, prefillMood, prefillEnergy, prefillRegulation) =>
+    set({
+      locked: false,
+      dimensions: { ...prefillDimensions },
+      mood: prefillMood,
+      energy: prefillEnergy,
+      regulation: prefillRegulation,
+    }),
 
   lock: () => set({ locked: true }),
 
@@ -31,11 +40,6 @@ export const useSessionStore = create<SessionStore>()((set) => ({
     set((state) => ({ dimensions: { ...state.dimensions, [key]: value } })),
 
   setMood: (v) => set({ mood: v }),
-
-  toggleTag: (id) =>
-    set((state) => ({
-      tags: state.tags.includes(id)
-        ? state.tags.filter((t) => t !== id)
-        : [...state.tags, id],
-    })),
+  setEnergy: (v) => set({ energy: v }),
+  setRegulation: (v) => set({ regulation: v }),
 }));

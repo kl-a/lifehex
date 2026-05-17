@@ -1,4 +1,4 @@
-import type { Session } from '../types';
+import type { Session, DayRecord } from '../types';
 import { isoDate } from './cyclePredictor';
 
 export function aggregateByDate(sessions: Session[]): Map<string, number> {
@@ -40,13 +40,15 @@ export function streakDays(sessions: Session[]): number {
 
 export function exportJSON(
   sessions: Session[],
+  dayRecords: DayRecord[],
   cycles: unknown[],
   settings: unknown
 ): void {
   const payload = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     sessions,
+    dayRecords,
     cycles,
     settings,
   };
