@@ -332,16 +332,16 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
       {/* ── Main 3-column grid ── */}
       <div
         className="flex-1 min-h-0 grid gap-3"
-        style={{ gridTemplateColumns: '1fr 190px 1fr' }}
+        style={{ gridTemplateColumns: '1fr 190px 1fr', gridTemplateRows: '1fr', alignItems: 'stretch' }}
       >
         {/* LEFT: Wheel of Life */}
-        <div className="card-indigo flex flex-col min-h-0 relative">
+        <div className="card-indigo flex flex-col overflow-hidden relative">
           <div className="flex justify-between items-center mb-2 flex-shrink-0">
             <span className="text-[11px] font-bold uppercase tracking-widest text-star-gold">Wheel of Life</span>
             <span className="text-[10px] text-muted-purple">tap to {locked ? 'inspect' : 'adjust'}</span>
           </div>
           {/* Chart + legend side by side */}
-          <div className="flex-1 min-h-0 flex gap-3 min-w-0">
+          <div className="flex-1 overflow-hidden flex gap-3 min-w-0">
             {/* Vertical legend list */}
             <div className="flex flex-col justify-center gap-1 flex-shrink-0">
               {DIMENSIONS.map((d) => {
@@ -392,12 +392,12 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
         </div>
 
         {/* MIDDLE: Mood / Energy / Regulation vertical sliders */}
-        <div className="card-indigo flex flex-col min-h-0">
+        <div className="card-indigo flex flex-col overflow-hidden">
           <div className="flex-shrink-0 mb-2">
             <span className="text-[11px] font-bold uppercase tracking-widest text-star-gold">State</span>
             {locked && <p className="text-[9px] text-muted-purple/60 mt-0.5">Unlock to adjust</p>}
           </div>
-          <div className="flex-1 min-h-0 flex gap-3 justify-around">
+          <div className="flex-1 overflow-hidden flex gap-3 justify-around">
             <MoodSlider
               label="Mood"
               value={displayMood}
@@ -429,7 +429,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
         </div>
 
         {/* RIGHT: Checklist + sessions + symptoms */}
-        <div className="min-h-0 overflow-y-auto flex flex-col gap-2 pr-1" style={{ scrollbarWidth: 'thin' }}>
+        <div className="overflow-y-auto flex flex-col gap-2 pr-1" style={{ scrollbarWidth: 'thin' }}>
           <DailyChecklist isLuteal={phaseInfo.phase === 'luteal'} />
 
           {todaySessions.length > 0 && (
