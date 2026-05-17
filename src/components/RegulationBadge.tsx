@@ -22,22 +22,27 @@ export function RegulationBadge({ zone, reasons = [], onOverride }: Props) {
   return (
     <div className="relative h-full">
       <div
-        className="flex items-center gap-3 px-4 py-2.5 rounded h-full"
+        className="flex flex-col justify-between px-4 py-3 rounded h-full"
         style={{ background: s.bg, border: `2px solid ${s.border}` }}
       >
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <span className="font-bold text-[8px] uppercase tracking-widest text-muted-purple flex-shrink-0">Current State</span>
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
-            <span className="font-bold text-[11px] flex-shrink-0" style={{ color: s.dot }}>{s.label}</span>
-            {zone !== 'green' && reasons.length > 0 && (
-              <span className="font-body text-[10px] text-muted-purple truncate">{reasons.join(' · ')}</span>
-            )}
-          </div>
+        {/* Top row: label left, override right */}
+        <div className="flex items-center justify-between">
+          <span className="font-bold text-[8px] uppercase tracking-widest text-muted-purple">Current State</span>
           <button
             onClick={() => setShowPicker((v) => !v)}
-            className="font-bold text-[9px] text-muted-purple hover:text-cloud-white transition-colors flex-shrink-0"
+            className="font-bold text-[9px] text-muted-purple hover:text-cloud-white transition-colors"
           >↺ override</button>
+        </div>
+
+        {/* Bottom: zone name prominent + reasons */}
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: s.dot }} />
+            <span className="font-bold text-[18px] leading-none" style={{ color: s.dot }}>{s.label}</span>
+          </div>
+          {zone !== 'green' && reasons.length > 0 && (
+            <span className="font-body text-[10px] text-muted-purple">{reasons.join(' · ')}</span>
+          )}
         </div>
       </div>
 

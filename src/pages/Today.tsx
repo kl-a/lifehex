@@ -230,17 +230,21 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
 
   const isWeekday = now.getDay() >= 1 && now.getDay() <= 5;
   const mealsLogged = dayRecord.meals.filter((m) => m.logged).length;
-  const zoneInputs = { mood, energy, regulation, isLutealPhase: phaseInfo.phase === 'luteal', medicationTaken: dayRecord.medicationTaken, isWeekday, symptomCount: dayRecord.symptoms.length, thatWasntMeToday: dayRecord.thatWasntMe, sleepQuality: dayRecord.sleepQuality, mealsLogged, gymToday: dayRecord.gymToday };
-  const systemZone = calculateZone(zoneInputs);
   const lastSession = todaySessions[todaySessions.length - 1] ?? sessions[sessions.length - 1];
-  const displayZone = locked ? (lastSession?.confirmedZone ?? 'green') : systemZone;
-  const zoneReasons = locked ? [] : getZoneReasons(zoneInputs);
+
+  // Display values — derive from last session when locked so the badge always recalculates from real data
   const displayDimensions: DimensionScores = locked && lastSession
     ? { ...DEFAULT_DIMENSIONS, ...lastSession.dimensions }
     : dimensions;
   const displayMood = locked && lastSession ? lastSession.mood : mood;
   const displayEnergy = locked && lastSession ? lastSession.energy : energy;
   const displayRegulation = locked && lastSession ? lastSession.emotionalRegulation : regulation;
+
+  // Always calculate zone from displayed values so the badge reflects current state even when locked
+  const zoneInputs = { mood: displayMood, energy: displayEnergy, regulation: displayRegulation, isLutealPhase: phaseInfo.phase === 'luteal', medicationTaken: dayRecord.medicationTaken, isWeekday, symptomCount: dayRecord.symptoms.length, thatWasntMeToday: dayRecord.thatWasntMe, sleepQuality: dayRecord.sleepQuality, mealsLogged, gymToday: dayRecord.gymToday };
+  const systemZone = calculateZone(zoneInputs);
+  const displayZone = systemZone;
+  const zoneReasons = getZoneReasons(zoneInputs);
 
   function handleAxisTap(key: keyof DimensionScores) {
     setActiveDimKey((prev) => (prev === key ? null : key));
