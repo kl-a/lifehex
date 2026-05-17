@@ -439,11 +439,13 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
         <div className="overflow-y-auto flex flex-col gap-2 pr-1" style={{ scrollbarWidth: 'thin' }}>
           <DailyChecklist isLuteal={phaseInfo.phase === 'luteal'} />
 
-          {todaySessions.length > 0 && (
-            <div className="card-indigo">
-              <div className="text-[9px] font-bold uppercase tracking-widest text-star-gold mb-2">
-                Sessions ({todaySessions.length})
-              </div>
+          <div className="card-indigo">
+            <div className="text-[9px] font-bold uppercase tracking-widest text-star-gold mb-2">
+              Sessions {todaySessions.length > 0 ? `(${todaySessions.length})` : ''}
+            </div>
+            {todaySessions.length === 0 ? (
+              <div className="font-body text-[12px] text-muted-purple/50">No sessions yet — lock a state to save one.</div>
+            ) : (
               <div className="flex flex-col gap-1.5">
                 {[...todaySessions].reverse().slice(0, 2).map((s) => {
                   const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -469,8 +471,8 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
                   );
                 })}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <PhysicalSymptoms />
         </div>
