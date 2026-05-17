@@ -1,60 +1,575 @@
 import { useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ReferenceArea,
   Radar, RadarChart, PolarGrid, PolarAngleAxis,
 } from 'recharts';
 import { useHistoryStore } from '../store/historyStore';
-import { DIMENSIONS } from '../data/constants';
-import { sessionsInRange, streakDays } from '../utils/moodAggregate';
-import type { DimensionScores } from '../types';
+import { useDayHistoryStore } from '../store/dayHistoryStore';
+import { useDayStore } from '../store/dayStore';
+import { useCycleStore } from '../store/cycleStore';
+import { useSettingsStore } from '../store/settingsStore';
+import { DIMENSIONS, MOOD_EMOJI, REGULATION_EMOJI } from '../data/constants';
+import { sessionsInRange } from '../utils/moodAggregate';
+import { getCyclePhase, isoDate, PHASE_COLORS } from '../utils/cyclePredictor';
+import type { DimensionScores, Session, DayRecord, CycleEntry } from '../types';
+
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+function cutoffDate(days: number): Date {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d;
+}
+
+function avgArr(arr: number[]): number | null {
+  return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+}
+
+function avgDims(sessions: Session[]): DimensionScores {
+  const out = {} as DimensionScores;
+  for (const d of DIMENSIONS) {
+    const vals = sessions.map(s => s.dimensions[d.key]);
+    out[d.key] = vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(2) : 5;
+  }
+  return out;
+}
+
+function daysBetween(a: string, b: string): number {
+  return Math.floor((new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()) / 86400000);
+}
+
+function addDaysToIso(iso: string, n: number): string {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + n);
+  return isoDate(d);
+}
+
+function dominantZone(sessions: Session[]): 'green' | 'amber' | 'red' | null {
+  if (!sessions.length) return null;
+  const priority = { red: 2, amber: 1, green: 0 } as const;
+  return sessions.reduce((best, s) =>
+    priority[s.confirmedZone] > priority[best] ? s.confirmedZone : best,
+    'green' as 'green' | 'amber' | 'red'
+  );
+}
+
+function zoneColor(zone: 'green' | 'amber' | 'red' | null): string {
+  if (zone === 'green') return '#b5ead7';
+  if (zone === 'amber') return '#ffeaa7';
+  if (zone === 'red') return '#f7cac9';
+  return '#16213e';
+}
+
+function isLutealForDate(dateStr: string, cycles: CycleEntry[], cycleLen: number): boolean {
+  for (const cycle of cycles) {
+    const start = cycle.cycleStartDate;
+    const end = cycle.cycleEndDate ?? isoDate(new Date());
+    if (dateStr >= start && dateStr <= end) {
+      const dayNum = daysBetween(start, dateStr) + 1;
+      return dayNum >= 17;
+    }
+  }
+  // Fall back to current cycle start
+  if (cycles.length > 0) {
+    const dayNum = daysBetween(cycles[0].cycleStartDate, dateStr) + 1;
+    const cycleDay = ((dayNum - 1 + cycleLen) % cycleLen) + 1;
+    return cycleDay >= 17;
+  }
+  return false;
+}
+
+function zoneStreakFromSessions(sessions: Session[]): { count: number; zone: 'green' | 'amber' | 'red' | null } {
+  const dateZoneMap = new Map<string, 'green' | 'amber' | 'red'>();
+  const priority = { red: 2, amber: 1, green: 0 } as const;
+  for (const s of sessions) {
+    const d = s.timestamp.slice(0, 10);
+    const existing = dateZoneMap.get(d);
+    if (!existing || priority[s.confirmedZone] > priority[existing]) {
+      dateZoneMap.set(d, s.confirmedZone);
+    }
+  }
+  const todayStr = isoDate(new Date());
+  const todayZone = dateZoneMap.get(todayStr) ?? null;
+  if (!todayZone) return { count: 0, zone: null };
+  let count = 0;
+  for (let i = 0; i < 120; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const z = dateZoneMap.get(isoDate(d));
+    if (z === todayZone) count++;
+    else break;
+  }
+  return { count, zone: todayZone };
+}
+
+// ─── correlation card ────────────────────────────────────────────────────────
+
+function CorrelationCard({
+  emoji, label,
+  aLabel, bLabel,
+  aAvg, bAvg,
+  aCount, bCount,
+  metric,
+}: {
+  emoji: string; label: string;
+  aLabel: string; bLabel: string;
+  aAvg: number | null; bAvg: number | null;
+  aCount: number; bCount: number;
+  metric: string;
+}) {
+  const minData = 3;
+  const enough = aCount >= minData && bCount >= minData;
+  const delta = aAvg !== null && bAvg !== null ? aAvg - bAvg : null;
+  const arrowColor = delta !== null
+    ? (delta > 0.5 ? '#b5ead7' : delta < -0.5 ? '#f7cac9' : '#9b89c4')
+    : '#9b89c4';
+  const arrow = delta !== null
+    ? (delta > 0.5 ? '↑' : delta < -0.5 ? '↓' : '→')
+    : '→';
+
+  return (
+    <div className="rounded p-3 flex flex-col gap-2" style={{ background: '#16213e', border: '1px solid rgba(155,137,196,0.25)' }}>
+      <div className="font-bold text-[8px] text-muted-purple uppercase tracking-widest">{emoji} {label}</div>
+      <div className="font-body text-[9px] text-muted-purple/60 uppercase tracking-wider">{metric}</div>
+      {!enough ? (
+        <div className="font-body text-[12px] text-muted-purple">More data needed</div>
+      ) : (
+        <>
+          <div className="flex items-end gap-2">
+            <div>
+              <div className="font-body text-[10px] text-muted-purple">{aLabel}</div>
+              <div className="font-bold text-[18px] text-cloud-white">{aAvg!.toFixed(1)}</div>
+            </div>
+            <span className="font-bold text-[14px] mb-1" style={{ color: arrowColor }}>{arrow}</span>
+            <div>
+              <div className="font-body text-[10px] text-muted-purple">{bLabel}</div>
+              <div className="font-bold text-[18px] text-cloud-white">{bAvg!.toFixed(1)}</div>
+            </div>
+          </div>
+          {delta !== null && Math.abs(delta) > 0.5 && (
+            <div className="font-body text-[10px]" style={{ color: arrowColor }}>
+              {delta > 0 ? '+' : ''}{delta.toFixed(1)} difference
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── zone dot strip ──────────────────────────────────────────────────────────
+
+function ZoneDotStrip({ range, sessions, cycles, cycleLen }: {
+  range: number;
+  sessions: Session[];
+  cycles: CycleEntry[];
+  cycleLen: number;
+}) {
+  const [hoveredDate, setHoveredDate] = useState<string | null>(null);
+
+  const dates: string[] = [];
+  for (let i = range - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    dates.push(isoDate(d));
+  }
+
+  const sessionsByDate = new Map<string, Session[]>();
+  for (const s of sessions) {
+    const d = s.timestamp.slice(0, 10);
+    const arr = sessionsByDate.get(d) ?? [];
+    arr.push(s);
+    sessionsByDate.set(d, arr);
+  }
+
+  return (
+    <div className="pt-3 mt-3" style={{ borderTop: '1px solid rgba(155,137,196,0.2)' }}>
+      <div className="font-bold text-[8px] text-muted-purple uppercase tracking-widest mb-2">Zone per day</div>
+      <div className="flex gap-px items-center" style={{ height: 20 }}>
+        {dates.map(date => {
+          const daySessions = sessionsByDate.get(date) ?? [];
+          const zone = dominantZone(daySessions);
+          const isLuteal = isLutealForDate(date, cycles, cycleLen);
+          const color = zone ? zoneColor(zone) : 'rgba(22,33,62,0.9)';
+          return (
+            <div
+              key={date}
+              className="flex-1 rounded-sm cursor-default"
+              style={{
+                height: 10,
+                background: color,
+                border: zone ? `1px solid ${color}` : '1px solid rgba(155,137,196,0.2)',
+                boxShadow: isLuteal && zone ? `0 0 0 1px #c9a84c` : 'none',
+                opacity: zone ? 1 : 0.4,
+              }}
+              onMouseEnter={() => setHoveredDate(date)}
+              onMouseLeave={() => setHoveredDate(null)}
+            />
+          );
+        })}
+      </div>
+      <div className="font-body text-[10px] text-muted-purple mt-1" style={{ height: 14 }}>
+        {hoveredDate && (() => {
+          const daySessions = sessionsByDate.get(hoveredDate) ?? [];
+          const zone = dominantZone(daySessions) ?? 'no data';
+          const fmt = new Date(hoveredDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+          return <span>{fmt} · {zone}{daySessions.length ? ` · ${daySessions.length} session${daySessions.length !== 1 ? 's' : ''}` : ''}</span>;
+        })()}
+      </div>
+    </div>
+  );
+}
+
+// ─── cycle pattern strip ─────────────────────────────────────────────────────
+
+function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
+  const { sessions } = useHistoryStore();
+  const { dayRecords } = useDayHistoryStore();
+  const { dayRecord } = useDayStore();
+  const { cycles } = useCycleStore();
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
+
+  const moodsByDay = new Map<number, number[]>();
+  const flagsByDay = new Set<number>();
+
+  for (const cycle of cycles) {
+    const start = cycle.cycleStartDate;
+    const end = cycle.cycleEndDate ?? isoDate(new Date());
+    for (const s of sessions) {
+      const sessionDate = s.timestamp.slice(0, 10);
+      if (sessionDate >= start && sessionDate <= end) {
+        const cd = daysBetween(start, sessionDate) + 1;
+        if (cd >= 1 && cd <= 28) {
+          const arr = moodsByDay.get(cd) ?? [];
+          arr.push(s.mood);
+          moodsByDay.set(cd, arr);
+        }
+      }
+    }
+    const allDayRecords = [dayRecord, ...dayRecords];
+    for (const dr of allDayRecords) {
+      if (dr.thatWasntMe && dr.date >= start && dr.date <= end) {
+        const cd = daysBetween(start, dr.date) + 1;
+        if (cd >= 1 && cd <= 28) flagsByDay.add(cd);
+      }
+    }
+  }
+
+  const avgMood = (day: number): number | null => {
+    const arr = moodsByDay.get(day);
+    if (!arr || !arr.length) return null;
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
+  };
+
+  function moodFill(avg: number | null): string {
+    if (avg === null) return 'transparent';
+    if (avg >= 7) return 'rgba(181,234,215,0.7)';
+    if (avg >= 4) return 'rgba(255,234,167,0.7)';
+    return 'rgba(247,202,201,0.7)';
+  }
+  function moodBorder(avg: number | null): string {
+    if (avg === null) return '1px dashed rgba(155,137,196,0.3)';
+    if (avg >= 7) return '1px solid #6aab90';
+    if (avg >= 4) return '1px solid #c9a84c';
+    return '1px solid #c98a88';
+  }
+
+  const PHASE_LABELS = [
+    { label: 'M', from: 1, to: 5, color: '#f7cac9' },
+    { label: 'F', from: 6, to: 13, color: '#b5ead7' },
+    { label: 'O', from: 14, to: 15, color: '#ffeaa7' },
+    { label: 'L', from: 16, to: 28, color: '#c9b8f0' },
+  ];
+
+  return (
+    <div className="card-indigo flex flex-col gap-3">
+      <div>
+        <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold">Your Cycle Pattern</div>
+        <div className="font-body text-[11px] text-muted-purple mt-0.5">
+          Average across all logged cycles · {cycles.length} cycle{cycles.length !== 1 ? 's' : ''}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex gap-4">
+        {[
+          { color: 'rgba(181,234,215,0.7)', border: '#6aab90', label: 'Avg mood ≥ 7' },
+          { color: 'rgba(255,234,167,0.7)', border: '#c9a84c', label: '4–6.9' },
+          { color: 'rgba(247,202,201,0.7)', border: '#c98a88', label: '< 4' },
+        ].map(l => (
+          <div key={l.label} className="flex items-center gap-1.5">
+            <div className="w-3 h-3 rounded-sm" style={{ background: l.color, border: `1px solid ${l.border}` }} />
+            <span className="font-body text-[10px] text-muted-purple">{l.label}</span>
+          </div>
+        ))}
+        <div className="flex items-center gap-1.5">
+          <div className="w-3 h-3 rounded-sm" style={{ border: '2px solid #ffe066' }} />
+          <span className="font-body text-[10px] text-muted-purple">Today</span>
+        </div>
+      </div>
+
+      {/* Phase labels */}
+      <div className="relative" style={{ height: 16 }}>
+        {PHASE_LABELS.map(p => {
+          const leftPct = ((p.from - 1) / 28) * 100;
+          const widthPct = ((p.to - p.from + 1) / 28) * 100;
+          return (
+            <div key={p.label} className="absolute flex items-center justify-center font-bold text-[8px]"
+              style={{ left: `${leftPct}%`, width: `${widthPct}%`, color: p.color, top: 0, bottom: 0 }}>
+              {p.label}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 28-day mood blocks */}
+      <div className="flex gap-0.5">
+        {Array.from({ length: 28 }, (_, i) => {
+          const day = i + 1;
+          const avg = avgMood(day);
+          const isToday = day === cyclePos;
+          return (
+            <div key={day} className="flex-1 flex flex-col items-center gap-0.5"
+              onMouseEnter={() => setHoveredDay(day)} onMouseLeave={() => setHoveredDay(null)}>
+              <div className="w-full rounded-sm" style={{
+                height: 36,
+                background: moodFill(avg),
+                border: isToday ? '2px solid #ffe066' : moodBorder(avg),
+                boxShadow: isToday ? '0 0 6px rgba(255,224,102,0.5)' : 'none',
+              }} />
+              {day % 7 === 1 || day === 28
+                ? <span className="font-bold text-[6px]" style={{ color: 'rgba(155,137,196,0.5)' }}>{day}</span>
+                : <span style={{ height: 9 }} />}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* "That wasn't me" strip */}
+      <div>
+        <div className="font-body text-[10px] text-muted-purple mb-1">that wasn't me</div>
+        <div className="flex gap-0.5">
+          {Array.from({ length: 28 }, (_, i) => {
+            const day = i + 1;
+            return (
+              <div key={day} className="flex-1 rounded-sm" style={{
+                height: 14,
+                background: flagsByDay.has(day) ? 'rgba(247,202,201,0.6)' : 'transparent',
+                border: flagsByDay.has(day) ? '1px solid #c98a88' : '1px solid rgba(155,137,196,0.12)',
+              }} />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Hover tooltip — fixed height */}
+      <div className="font-body text-[11px] text-center" style={{ height: 16 }}>
+        {hoveredDay !== null && (() => {
+          const avg = avgMood(hoveredDay);
+          const count = moodsByDay.get(hoveredDay)?.length ?? 0;
+          const flags = flagsByDay.has(hoveredDay) ? 1 : 0;
+          return (
+            <span className="text-muted-purple">
+              Day {hoveredDay} · {avg !== null ? `Avg mood ${avg.toFixed(1)}` : 'No data'} · {count} session{count !== 1 ? 's' : ''}{flags ? ' · 1 flag' : ''}
+            </span>
+          );
+        })()}
+      </div>
+    </div>
+  );
+}
+
+// ─── main page ───────────────────────────────────────────────────────────────
 
 export function Dashboard() {
   const { sessions } = useHistoryStore();
+  const { dayRecords } = useDayHistoryStore();
+  const { dayRecord } = useDayStore();
+  const { cycles } = useCycleStore();
+  const { expectedCycleLength: cycleLen, expectedPeriodLength: periodLen } = useSettingsStore();
   const [range, setRange] = useState(30);
 
+  // ── window data ──
+  const cutoff = cutoffDate(range);
+  const prevCutoff = cutoffDate(range * 2);
+  const cutoffStr = isoDate(cutoff);
+
   const inRange = sessionsInRange(sessions, range);
-  const streak = streakDays(sessions);
-  const moodAvg = inRange.length
-    ? (inRange.reduce((s, x) => s + x.mood, 0) / inRange.length).toFixed(1)
-    : '—';
-  const daysLogged = new Set(inRange.map((s) => s.timestamp.slice(0, 10))).size;
+  const prevInRange = sessions.filter(s => {
+    const d = new Date(s.timestamp);
+    return d >= prevCutoff && d < cutoff;
+  });
 
-  const avg = (list: typeof sessions): DimensionScores => {
-    const out = {} as DimensionScores;
-    for (const d of DIMENSIONS) {
-      const vals = list.map((s) => s.dimensions[d.key]);
-      out[d.key] = vals.length ? +(vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : 0;
+  const allDayRecords: DayRecord[] = [dayRecord, ...dayRecords];
+  const dayRecordsInRange = allDayRecords.filter(dr => dr.date >= cutoffStr);
+
+  // ── aggregate stats ──
+  const moodAvg = avgArr(inRange.map(s => s.mood));
+  const regAvg = avgArr(inRange.map(s => s.emotionalRegulation));
+  const daysLogged = new Set(inRange.map(s => s.timestamp.slice(0, 10))).size;
+
+  // ── cycle ──
+  const cycleStartISO = cycles.length ? cycles[0].cycleStartDate : isoDate(new Date());
+  const phaseInfo = getCyclePhase(cycleStartISO, cycleLen, periodLen, new Date());
+  const daysUntilLuteal = 17 - phaseInfo.cyclePos;
+  const lutealDay = phaseInfo.cyclePos >= 17 ? phaseInfo.cyclePos - 16 : 0;
+  const daysUntilPeriod = phaseInfo.totalLen - phaseInfo.cyclePos;
+
+  // ── zone streak ──
+  const zoneStreak = zoneStreakFromSessions(sessions);
+  const streakZoneColor = zoneColor(zoneStreak.zone);
+
+  // ── synthesis sentence ──
+  function synthesize(): { text: string; color: string } {
+    if (cycles.length > 0 && phaseInfo.phase === 'luteal') {
+      let text = `🌙 Luteal phase — day ${lutealDay} of ~${daysUntilPeriod + lutealDay}.`;
+      if (regAvg !== null && regAvg < 6) text += ' Your regulation has been lower than usual. Be gentle.';
+      return { text, color: '#ffeaa7' };
     }
-    return out;
-  };
-  const avg7 = avg(sessionsInRange(sessions, 7));
-  const avg30 = avg(sessionsInRange(sessions, 30));
+    if (cycles.length > 0 && daysUntilLuteal > 0 && daysUntilLuteal <= 5) {
+      return { text: `🌙 Luteal phase in ${daysUntilLuteal} day${daysUntilLuteal === 1 ? '' : 's'}. Worth protecting your schedule this week.`, color: '#ffeaa7' };
+    }
+    if (zoneStreak.zone === 'green' && zoneStreak.count >= 5) {
+      return { text: `✨ ${zoneStreak.count} green days in a row. ${PHASE_COLORS[phaseInfo.phase].label} phase — this is often your strongest window.`, color: '#b5ead7' };
+    }
+    // Count harder days in range
+    const sessionsByDate7 = new Map<string, Session[]>();
+    const w7 = sessionsInRange(sessions, 7);
+    for (const s of w7) {
+      const d = s.timestamp.slice(0, 10);
+      const arr = sessionsByDate7.get(d) ?? []; arr.push(s); sessionsByDate7.set(d, arr);
+    }
+    const hardDays = [...sessionsByDate7.values()].filter(ss => dominantZone(ss) !== 'green').length;
+    if (hardDays >= 3) {
+      return { text: `⚠️ ${hardDays} harder days this week.${phaseInfo.phase === 'luteal' ? ' This matches your luteal phase pattern.' : ''}`, color: '#f7cac9' };
+    }
+    if (regAvg !== null && regAvg < 5) {
+      return { text: `🔴 Your regulation average has been below 5 for the last ${range} days. Consider booking something restorative.`, color: '#f7cac9' };
+    }
+    return {
+      text: `📊 ${inRange.length} session${inRange.length !== 1 ? 's' : ''} logged over ${range} days · ${daysLogged} day${daysLogged !== 1 ? 's' : ''} tracked · Avg mood ${moodAvg?.toFixed(1) ?? '—'} · Avg regulation ${regAvg?.toFixed(1) ?? '—'}`,
+      color: '#9b89c4',
+    };
+  }
+  const synthesis = synthesize();
 
-  const zoneCounts = { green: 0, amber: 0, red: 0 };
-  inRange.forEach((s) => { zoneCounts[s.confirmedZone] = (zoneCounts[s.confirmedZone] ?? 0) + 1; });
+  // ── stat pills ──
+  const phaseColor = PHASE_COLORS[phaseInfo.phase].bg;
+  let cyclePositionText = '—';
+  if (cycles.length > 0) {
+    if (phaseInfo.phase === 'luteal') {
+      cyclePositionText = `🌙 Luteal day ${lutealDay}`;
+    } else {
+      cyclePositionText = `${PHASE_COLORS[phaseInfo.phase].label} · ${daysUntilLuteal}d to luteal`;
+    }
+  }
 
-  const moodData = inRange.map((s) => ({
+  // ── feeling chart data ──
+  const feelingData = inRange.map(s => ({
     date: new Date(s.timestamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
     mood: s.mood,
-    energy: s.energy ?? undefined,
-    regulation: s.emotionalRegulation ?? undefined,
+    energy: s.energy,
+    reg: s.emotionalRegulation,
   }));
 
-  const radarData7 = DIMENSIONS.map((d) => ({ subject: d.short, v7: avg7[d.key], v30: avg30[d.key] }));
+  // Luteal reference areas for feeling chart
+  const lutealBands: { x1: string; x2: string }[] = [];
+  for (const cycle of cycles) {
+    const lutealStartDate = addDaysToIso(cycle.cycleStartDate, 16);
+    const lutealEndDate = cycle.cycleEndDate ?? addDaysToIso(cycle.cycleStartDate, cycleLen - 1);
+    if (lutealEndDate >= cutoffStr) {
+      const x1 = new Date(lutealStartDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      const x2 = new Date(lutealEndDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      lutealBands.push({ x1, x2 });
+    }
+  }
+
+  // ── balance drift radar ──
+  const currentAvg = avgDims(inRange);
+  const prevAvg = avgDims(prevInRange);
+  const radarData = DIMENSIONS.map(d => ({
+    subject: d.short,
+    current: +currentAvg[d.key].toFixed(1),
+    previous: +prevAvg[d.key].toFixed(1),
+  }));
+
+  const drifts = DIMENSIONS.map(d => ({
+    short: d.short,
+    delta: currentAvg[d.key] - prevAvg[d.key],
+  })).sort((a, b) => b.delta - a.delta);
+  const hasMeaningfulDrift = drifts.some(d => Math.abs(d.delta) > 0.3) && prevInRange.length > 0;
+  const positiveDrifts = drifts.filter(d => d.delta > 0.3).slice(0, 3);
+  const negativeDrifts = [...drifts].reverse().filter(d => d.delta < -0.3).slice(0, 3);
+
+  // ── correlation data ──
+  const sessionsByDate = new Map<string, Session[]>();
+  for (const s of inRange) {
+    const d = s.timestamp.slice(0, 10);
+    const arr = sessionsByDate.get(d) ?? []; arr.push(s); sessionsByDate.set(d, arr);
+  }
+  const dayRecordByDate = new Map<string, DayRecord>();
+  for (const dr of dayRecordsInRange) dayRecordByDate.set(dr.date, dr);
+
+  // Medication vs regulation
+  const medReg: number[] = [], noMedReg: number[] = [];
+  for (const [date, daySessions] of sessionsByDate) {
+    const dr = dayRecordByDate.get(date);
+    if (!dr) continue;
+    const dayRegAvg = avgArr(daySessions.map(s => s.emotionalRegulation));
+    if (dayRegAvg === null) continue;
+    const dow = new Date(date + 'T00:00:00').getDay();
+    if (dow === 0 || dow === 6) continue; // weekdays only
+    if (dr.medicationTaken) medReg.push(dayRegAvg);
+    else noMedReg.push(dayRegAvg);
+  }
+
+  // Luteal vs non-luteal (avg mood)
+  const lutealMood: number[] = [], nonLutealMood: number[] = [];
+  for (const [date, daySessions] of sessionsByDate) {
+    const dayMoodAvg = avgArr(daySessions.map(s => s.mood));
+    if (dayMoodAvg === null) continue;
+    if (isLutealForDate(date, cycles, cycleLen)) lutealMood.push(dayMoodAvg);
+    else nonLutealMood.push(dayMoodAvg);
+  }
+
+  // Gym vs no gym (avg mood)
+  const gymMood: number[] = [], noGymMood: number[] = [];
+  for (const [date, daySessions] of sessionsByDate) {
+    const dr = dayRecordByDate.get(date);
+    if (!dr) continue;
+    const dayMoodAvg = avgArr(daySessions.map(s => s.mood));
+    if (dayMoodAvg === null) continue;
+    if (dr.gymToday) gymMood.push(dayMoodAvg);
+    else noGymMood.push(dayMoodAvg);
+  }
+
+  // 3 meals vs fewer (avg regulation)
+  const fullMealReg: number[] = [], fewMealReg: number[] = [];
+  for (const [date, daySessions] of sessionsByDate) {
+    const dr = dayRecordByDate.get(date);
+    if (!dr) continue;
+    const dayRegAvg = avgArr(daySessions.map(s => s.emotionalRegulation));
+    if (dayRegAvg === null) continue;
+    const mealCount = dr.meals.filter(m => m.logged).length;
+    if (mealCount >= 3) fullMealReg.push(dayRegAvg);
+    else fewMealReg.push(dayRegAvg);
+  }
 
   return (
-    <div className="flex flex-col gap-4 pb-16">
+    <div className="flex flex-col gap-3 pb-16">
+
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <div className="font-bold text-[14px] text-cloud-white">Dashboard</div>
-          <div className="font-body text-[12px] text-lilac-shadow mt-1">Trends · History · Drift</div>
+          <div className="font-bold text-[11px] uppercase tracking-widest text-star-gold">Dashboard</div>
+          <div className="font-body text-[11px] text-muted-purple mt-0.5">Trends · History · Drift</div>
         </div>
-        <div className="flex rounded overflow-hidden border border-muted-purple/40">
-          {[30, 90].map((r) => (
+        <div className="flex rounded overflow-hidden" style={{ border: '1px solid rgba(155,137,196,0.4)' }}>
+          {([7, 30, 90] as const).map(r => (
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`font-bold text-[7px] px-3 py-2 transition-colors ${range === r ? 'bg-muted-purple/30 text-butter' : 'text-lilac-shadow'}`}
+              className={`font-bold text-[8px] px-3 py-2 transition-colors ${range === r ? 'text-butter' : 'text-muted-purple hover:text-cloud-white'}`}
+              style={{ background: range === r ? 'rgba(155,137,196,0.2)' : 'transparent' }}
             >
               {r}d
             </button>
@@ -62,102 +577,148 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Stat tiles */}
-      <div className="grid grid-cols-4 gap-2">
-        <StatTile label="Sessions" value={String(inRange.length)} color="text-butter" />
-        <StatTile label="Avg Mood" value={moodAvg} color="text-mint-green" />
-        <StatTile label="Streak" value={`${streak}d`} color="text-peach" />
-        <StatTile label="Days" value={String(daysLogged)} color="text-soft-lilac" />
-      </div>
-
-      {/* Mood line chart */}
+      {/* Headline card */}
       <div className="card-indigo">
-        <div className="font-bold text-[8px] text-star-gold mb-1">Mood Over Time</div>
-        <div className="font-body text-[11px] text-lilac-shadow mb-3">{range} day window</div>
-        {moodData.length < 2 ? (
-          <div className="h-40 flex items-center justify-center font-body text-[13px] text-lilac-shadow">
-            Log a few sessions to see your trend.
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={moodData}>
-              <CartesianGrid stroke="#7a6fa0" strokeOpacity={0.2} strokeDasharray="3 4" />
-              <XAxis dataKey="date" tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
-              <YAxis domain={[1, 10]} tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={{ background: '#16213e', border: '1px solid #9b89c4', borderRadius: 4, fontFamily: 'Nunito', fontSize: 12 }} />
-              <Line type="monotone" dataKey="mood" stroke="#ffe066" strokeWidth={2.5} dot={{ fill: '#ffe066', r: 3, strokeWidth: 0 }} activeDot={{ r: 6, fill: '#ffe066' }} />
-              <Line type="monotone" dataKey="energy" stroke="#b5ead7" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-              <Line type="monotone" dataKey="regulation" stroke="#c9b8f0" strokeWidth={1.5} dot={false} strokeDasharray="2 3" />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
+        <div className="font-body text-[14px] leading-relaxed mb-4" style={{ color: synthesis.color }}>
+          {synthesis.text}
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          <StatPill emoji={moodAvg !== null ? MOOD_EMOJI(moodAvg) : '😶'} label="Avg Mood" value={moodAvg?.toFixed(1) ?? '—'} color="#ffe066" />
+          <StatPill emoji={regAvg !== null ? REGULATION_EMOJI(regAvg) : '😤'} label="Avg Regulation" value={regAvg?.toFixed(1) ?? '—'} color="#c9b8f0" />
+          <StatPill
+            emoji="🔥"
+            label={`${zoneStreak.zone ?? 'No'} streak`}
+            value={zoneStreak.count > 0 ? `${zoneStreak.count}d` : '—'}
+            color={streakZoneColor}
+          />
+          <StatPill emoji="🌙" label="Cycle" value={cyclePositionText} color={phaseColor} small />
+        </div>
       </div>
 
-      {/* Balance drift + top tags */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="card-indigo">
-          <div className="font-bold text-[8px] text-star-gold mb-1">Balance Drift</div>
-          <div className="font-body text-[10px] text-lilac-shadow mb-2">7d vs 30d avg</div>
-          <ResponsiveContainer width="100%" height={200}>
-            <RadarChart data={radarData7} cx="50%" cy="50%" outerRadius="65%">
-              <PolarGrid stroke="#7a6fa0" strokeOpacity={0.25} />
-              <PolarAngleAxis dataKey="subject" tick={{ fontFamily: "'Press Start 2P'", fontSize: 7, fill: '#9b89c4' }} />
-              <Radar dataKey="v30" stroke="#c9b8f0" fill="rgba(201,184,240,0.25)" strokeWidth={1.5} />
-              <Radar dataKey="v7" stroke="#ffe066" fill="rgba(255,224,102,0.2)" strokeWidth={2} />
-            </RadarChart>
-          </ResponsiveContainer>
-          <div className="flex gap-4 justify-center mt-1">
-            <LegendDot color="#ffe066" label="7 days" />
-            <LegendDot color="#c9b8f0" label="30 days" />
-          </div>
-        </div>
+      {/* Main two-column area */}
+      <div className="grid gap-3" style={{ gridTemplateColumns: '2fr 1fr', alignItems: 'start' }}>
 
+        {/* LEFT: Feeling chart */}
         <div className="card-indigo">
-          <div className="font-bold text-[8px] text-star-gold mb-3">Zone Distribution</div>
-          {inRange.length === 0 ? (
-            <p className="font-body text-[12px] text-lilac-shadow">No sessions in this range yet.</p>
-          ) : (
-            <div className="flex flex-col gap-3">
-              {([['green', '#b5ead7', '#6aab90'], ['amber', '#ffeaa7', '#c9a84c'], ['red', '#f7cac9', '#c98a88']] as const).map(([z, fill, border]) => {
-                const count = zoneCounts[z] ?? 0;
-                const max = Math.max(...Object.values(zoneCounts), 1);
-                return (
-                  <div key={z} className="flex items-center gap-2">
-                    <span className="font-bold text-[9px] uppercase w-10" style={{ color: fill }}>{z}</span>
-                    <div className="flex-1 h-2 bg-muted-purple/15 rounded overflow-hidden">
-                      <div className="h-full rounded" style={{ width: `${(count / max) * 100}%`, background: fill, border: `1px solid ${border}` }} />
-                    </div>
-                    <span className="font-bold text-[9px] w-5 text-right" style={{ color: fill }}>{count}</span>
-                  </div>
-                );
-              })}
-              <div className="flex gap-3 mt-1">
-                <LegendDot color="#b5ead7" label="Energy" />
-                <LegendDot color="#c9b8f0" label="Regulation" />
-                <LegendDot color="#ffe066" label="Mood" />
-              </div>
+          <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-1">Feeling Chart</div>
+          <div className="font-body text-[11px] text-muted-purple mb-3">{range}d · mood / energy / regulation</div>
+
+          {feelingData.length < 2 ? (
+            <div className="flex items-center justify-center font-body text-[13px] text-muted-purple" style={{ height: 200 }}>
+              Log a few sessions to see your trend.
             </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={feelingData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+                <CartesianGrid stroke="#7a6fa0" strokeOpacity={0.15} horizontal vertical={false} />
+                {lutealBands.map((b, i) => (
+                  <ReferenceArea key={i} x1={b.x1} x2={b.x2} fill="rgba(255,234,167,0.1)" strokeOpacity={0} />
+                ))}
+                <XAxis dataKey="date" tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                <YAxis domain={[1, 10]} tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} ticks={[1, 5, 10]} />
+                <Tooltip
+                  contentStyle={{ background: '#16213e', border: '1px solid rgba(155,137,196,0.4)', borderRadius: 4, fontFamily: 'Nunito', fontSize: 12 }}
+                  labelStyle={{ color: '#9b89c4', fontSize: 11 }}
+                />
+                <Line type="monotone" dataKey="mood" name="Mood" stroke="#ffe066" strokeWidth={2.5} dot={{ fill: '#ffe066', r: 3, strokeWidth: 0 }} activeDot={{ r: 5, fill: '#ffe066' }} />
+                <Line type="monotone" dataKey="energy" name="Energy" stroke="#b5ead7" strokeWidth={1.5} dot={{ fill: '#b5ead7', r: 2, strokeWidth: 0 }} activeDot={{ r: 5 }} strokeDasharray="4 2" />
+                <Line type="monotone" dataKey="reg" name="Regulation" stroke="#c9b8f0" strokeWidth={1.5} dot={{ fill: '#c9b8f0', r: 2, strokeWidth: 0 }} activeDot={{ r: 5 }} strokeDasharray="2 3" />
+              </LineChart>
+            </ResponsiveContainer>
           )}
+
+          {/* Legend */}
+          <div className="flex gap-4 mt-2">
+            <LegendLine color="#ffe066" label="Mood" />
+            <LegendLine color="#b5ead7" label="Energy" dashed />
+            <LegendLine color="#c9b8f0" label="Regulation" dashed />
+            {cycles.length > 0 && <div className="flex items-center gap-1.5"><div className="w-4 h-2 rounded" style={{ background: 'rgba(255,234,167,0.25)' }} /><span className="font-body text-[10px] text-muted-purple">Luteal</span></div>}
+          </div>
+
+          {/* Zone dot strip */}
+          <ZoneDotStrip range={range} sessions={inRange} cycles={cycles} cycleLen={cycleLen} />
+        </div>
+
+        {/* RIGHT: Correlation cards + Balance drift radar */}
+        <div className="flex flex-col gap-3">
+
+          {/* Correlation cards 2×2 */}
+          <div className="card-indigo">
+            <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-3">What's driving it</div>
+            <div className="grid grid-cols-2 gap-2">
+              <CorrelationCard emoji="💊" label="Medication" aLabel="Medicated" bLabel="Unmedicated" aAvg={avgArr(medReg)} bAvg={avgArr(noMedReg)} aCount={medReg.length} bCount={noMedReg.length} metric="vs. regulation" />
+              <CorrelationCard emoji="🌙" label="Cycle phase" aLabel="Non-luteal" bLabel="Luteal" aAvg={avgArr(nonLutealMood)} bAvg={avgArr(lutealMood)} aCount={nonLutealMood.length} bCount={lutealMood.length} metric="vs. mood" />
+              <CorrelationCard emoji="🏋️" label="Movement" aLabel="Gym days" bLabel="Rest days" aAvg={avgArr(gymMood)} bAvg={avgArr(noGymMood)} aCount={gymMood.length} bCount={noGymMood.length} metric="vs. mood" />
+              <CorrelationCard emoji="🍱" label="Meals" aLabel="3 meals" bLabel="Fewer" aAvg={avgArr(fullMealReg)} bAvg={avgArr(fewMealReg)} aCount={fullMealReg.length} bCount={fewMealReg.length} metric="vs. regulation" />
+            </div>
+          </div>
+
+          {/* Balance drift radar */}
+          <div className="card-indigo">
+            <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-1">Balance Drift</div>
+            <div className="font-body text-[11px] text-muted-purple mb-2">Last {range}d vs prior {range}d</div>
+
+            {inRange.length === 0 ? (
+              <div className="font-body text-[12px] text-muted-purple py-4 text-center">Keep logging to see how your balance shifts.</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="62%">
+                  <PolarGrid stroke="#7a6fa0" strokeOpacity={0.25} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontFamily: "'Press Start 2P'", fontSize: 6, fill: '#9b89c4' }} />
+                  <Radar dataKey="previous" stroke="#9b89c4" fill="rgba(155,137,196,0.1)" strokeWidth={1.5} name={`Prior ${range}d`} />
+                  <Radar dataKey="current" stroke="#ffe066" fill="rgba(255,224,102,0.2)" strokeWidth={2} name={`Last ${range}d`} />
+                </RadarChart>
+              </ResponsiveContainer>
+            )}
+
+            <div className="flex gap-4 justify-center mt-1 mb-3">
+              <LegendLine color="#ffe066" label={`Last ${range}d`} />
+              <LegendLine color="#9b89c4" label={`Prior ${range}d`} dashed />
+            </div>
+
+            {/* Drift table */}
+            {hasMeaningfulDrift && (
+              <div className="flex flex-col gap-1" style={{ borderTop: '1px solid rgba(155,137,196,0.2)', paddingTop: 12 }}>
+                {positiveDrifts.map(d => (
+                  <div key={d.short} className="flex justify-between items-center">
+                    <span className="font-body text-[11px] text-muted-purple">{d.short}</span>
+                    <span className="font-bold text-[10px]" style={{ color: '#b5ead7' }}>↑ +{d.delta.toFixed(1)}</span>
+                  </div>
+                ))}
+                {negativeDrifts.map(d => (
+                  <div key={d.short} className="flex justify-between items-center">
+                    <span className="font-body text-[11px] text-muted-purple">{d.short}</span>
+                    <span className="font-bold text-[10px]" style={{ color: '#f7cac9' }}>↓ {d.delta.toFixed(1)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Full-width cycle pattern strip */}
+      <CyclePatternStrip cyclePos={phaseInfo.cyclePos} />
     </div>
   );
 }
 
-function StatTile({ label, value, color }: { label: string; value: string; color: string }) {
+// ─── small components ────────────────────────────────────────────────────────
+
+function StatPill({ emoji, label, value, color, small }: { emoji: string; label: string; value: string; color: string; small?: boolean }) {
   return (
-    <div className="card-base p-3 text-center">
-      <div className={`font-bold text-[18px] ${color}`}>{value}</div>
-      <div className="font-bold text-[6px] text-lilac-shadow mt-2 uppercase leading-relaxed">{label}</div>
+    <div className="rounded flex flex-col gap-1.5 p-3" style={{ background: '#16213e', border: '1px solid rgba(155,137,196,0.25)' }}>
+      <div className="font-bold text-[7px] uppercase tracking-widest text-muted-purple">{label}</div>
+      <div className={`font-body font-bold ${small ? 'text-[11px]' : 'text-[15px]'} leading-tight`} style={{ color }}>{emoji} {value}</div>
     </div>
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function LegendLine({ color, label, dashed }: { color: string; label: string; dashed?: boolean }) {
   return (
     <span className="flex items-center gap-1.5">
-      <span className="inline-block w-4 h-1 rounded" style={{ background: color }} />
-      <span className="font-body text-[11px] text-cloud-white">{label}</span>
+      <svg width="16" height="6"><line x1="0" y1="3" x2="16" y2="3" stroke={color} strokeWidth="2" strokeDasharray={dashed ? '4 2' : undefined} /></svg>
+      <span className="font-body text-[10px] text-muted-purple">{label}</span>
     </span>
   );
 }
