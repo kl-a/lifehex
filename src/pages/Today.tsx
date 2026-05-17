@@ -224,7 +224,10 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
     ? new Date(lastSavedISO).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false })
     : null;
 
-  const todaySessions = sessions.filter((s) => s.timestamp.slice(0, 10) === isoDate(now));
+  // Use local date (not UTC) so sessions filter correctly for AEST and other non-UTC zones
+  const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const localDateOf = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const todaySessions = sessions.filter((s) => localDateOf(s.timestamp) === localToday);
   const activeDim = activeDimKey ? DIMENSIONS.find((d) => d.key === activeDimKey) ?? null : null;
   const hoveredDim = hoveredDimKey ? DIMENSIONS.find((d) => d.key === hoveredDimKey) ?? null : null;
 
