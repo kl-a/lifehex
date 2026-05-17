@@ -1,5 +1,17 @@
 import type { RegulationInputs } from '../types';
 
+export function getZoneReasons(inputs: RegulationInputs): string[] {
+  const reasons: string[] = [];
+  if (inputs.mood <= 3) reasons.push('very low mood');
+  else if (inputs.energy <= 3) reasons.push('very low energy');
+  if (inputs.regulation <= 3) reasons.push('very low regulation');
+  if (inputs.isLutealPhase) reasons.push('luteal phase');
+  if (inputs.symptomCount >= 3) reasons.push('multiple symptoms');
+  if (inputs.thatWasntMeToday) reasons.push('dissociation flagged');
+  if (inputs.isWeekday && !inputs.medicationTaken) reasons.push('no medication today');
+  return reasons.slice(0, 2);
+}
+
 export function calculateZone(inputs: RegulationInputs): 'green' | 'amber' | 'red' {
   let risk = 0;
 
