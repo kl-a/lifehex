@@ -25,20 +25,23 @@ export function PhysicalSymptoms() {
     setThatWasntMeNote,
   } = useDayStore();
 
-  const activeCount = dayRecord.symptoms.length;
+  const activeSymptoms = SYMPTOM_CHIPS.filter(c => dayRecord.symptoms.includes(c.id));
 
   return (
     <div className="card-indigo">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 text-left"
+        className="w-full flex items-center gap-2 text-left"
       >
-        <span className="font-bold text-[10px] uppercase tracking-widest text-muted-purple">
+        <span className="font-bold text-[10px] uppercase tracking-widest text-muted-purple flex-shrink-0">
           {open ? '▼' : '▶'} Physical symptoms
         </span>
-        <span className="font-body text-[11px] text-muted-purple/60">optional</span>
-        {activeCount > 0 && (
-          <span className="ml-auto font-bold text-[10px] text-blush-pink">{activeCount} logged</span>
+        {activeSymptoms.length > 0 ? (
+          <span className="font-body text-[11px] text-muted-purple truncate">
+            {activeSymptoms.map(s => s.label.toLowerCase()).join(' · ')}
+          </span>
+        ) : (
+          <span className="font-body text-[11px] text-muted-purple/40">optional</span>
         )}
       </button>
 

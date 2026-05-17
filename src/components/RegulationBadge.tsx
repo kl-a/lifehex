@@ -5,6 +5,7 @@ type Zone = 'green' | 'amber' | 'red';
 
 interface Props {
   zone: Zone;
+  reasons?: string[];
   onOverride: (zone: Zone) => void;
 }
 
@@ -14,7 +15,7 @@ const ZONE_STYLES: Record<Zone, { bg: string; border: string; dot: string; label
   red:   { bg: 'rgba(247,202,201,0.15)', border: '#c98a88', dot: '#f7cac9', label: 'RED'   },
 };
 
-export function RegulationBadge({ zone, onOverride }: Props) {
+export function RegulationBadge({ zone, reasons = [], onOverride }: Props) {
   const [showPicker, setShowPicker] = useState(false);
   const s = ZONE_STYLES[zone];
 
@@ -24,15 +25,20 @@ export function RegulationBadge({ zone, onOverride }: Props) {
         className="flex items-center gap-3 px-4 py-2.5 rounded h-full"
         style={{ background: s.bg, border: `2px solid ${s.border}` }}
       >
-        <span className="font-bold text-[8px] uppercase tracking-widest text-muted-purple">Today's Zone</span>
-        <div className="flex items-center gap-2 flex-1">
-          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
-          <span className="font-bold text-[11px]" style={{ color: s.dot }}>{s.label}</span>
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <span className="font-bold text-[8px] uppercase tracking-widest text-muted-purple flex-shrink-0">Today's Zone</span>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
+            <span className="font-bold text-[11px] flex-shrink-0" style={{ color: s.dot }}>{s.label}</span>
+            {zone !== 'green' && reasons.length > 0 && (
+              <span className="font-body text-[10px] text-muted-purple truncate">{reasons.join(' · ')}</span>
+            )}
+          </div>
+          <button
+            onClick={() => setShowPicker((v) => !v)}
+            className="font-bold text-[9px] text-muted-purple hover:text-cloud-white transition-colors flex-shrink-0"
+          >↺ override</button>
         </div>
-        <button
-          onClick={() => setShowPicker((v) => !v)}
-          className="font-bold text-[9px] text-muted-purple hover:text-cloud-white transition-colors flex-shrink-0"
-        >↺ override</button>
       </div>
 
       <AnimatePresence>
