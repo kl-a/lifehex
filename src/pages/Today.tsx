@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PadlockIcon } from '../components/PadlockIcon';
 import { PeriodStrip } from '../components/PeriodStrip';
@@ -8,7 +8,7 @@ import { RegulationBadge } from '../components/RegulationBadge';
 import { DailyChecklist } from '../components/DailyChecklist';
 import { PhysicalSymptoms } from '../components/PhysicalSymptoms';
 import { NewsTicker } from '../components/NewsTicker';
-import { DIMENSIONS, MOOD_EMOJI, ENERGY_EMOJI, REGULATION_EMOJI } from '../data/constants';
+import { DIMENSIONS, DEFAULT_DIMENSIONS, MOOD_EMOJI, ENERGY_EMOJI, REGULATION_EMOJI } from '../data/constants';
 import { useSessionStore } from '../store/sessionStore';
 import { useHistoryStore } from '../store/historyStore';
 import { useDayStore } from '../store/dayStore';
@@ -163,10 +163,24 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
   const [activeDimKey, setActiveDimKey] = useState<keyof DimensionScores | null>(null);
   const [hoveredDimKey, setHoveredDimKey] = useState<keyof DimensionScores | null>(null);
   const [confirmedZone, setConfirmedZone] = useState<'green' | 'amber' | 'red'>('green');
+  const [clockNow, setClockNow] = useState(new Date());
+  const [colonVisible, setColonVisible] = useState(true);
 
-  const now = new Date();
+  useEffect(() => {
+    const tick = setInterval(() => {
+      const n = new Date();
+      setClockNow(n);
+      setColonVisible(n.getSeconds() % 2 === 0);
+    }, 1000);
+    return () => clearInterval(tick);
+  }, []);
+
+  const now = clockNow;
   const dateLabel = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
-  const time = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const hours = now.getHours();
+  const minutes = now.getMinutes().toString().padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = hours % 12 || 12;
   const lastSavedLabel = lastSavedISO
     ? new Date(lastSavedISO).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false })
     : null;
@@ -189,8 +203,11 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
     gymToday: dayRecord.gymToday,
   });
 
-  const lastSession = todaySessions[todaySessions.length - 1];
+  const lastSession = todaySessions[todaySessions.length - 1] ?? sessions[sessions.length - 1];
   const displayZone = locked ? (lastSession?.confirmedZone ?? 'green') : systemZone;
+  const displayDimensions: DimensionScores = locked && lastSession
+    ? { ...DEFAULT_DIMENSIONS, ...lastSession.dimensions }
+    : dimensions;
 
   function handleAxisTap(key: keyof DimensionScores) {
     setActiveDimKey((prev) => (prev === key ? null : key));
@@ -260,7 +277,10 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
             <span>{locked ? 'Locked' : 'Open — tap to save'}</span>
             {lastSavedLabel && <span className="text-[10px] text-muted-purple">· {lastSavedLabel}</span>}
           </button>
-          <div className="flex justify-end text-lg font-bold text-star-gold">{time}</div>
+          <div className="flex justify-end items-baseline gap-1 font-bold text-star-gold">
+            <span className="text-lg">{hour12}<span style={{ opacity: colonVisible ? 1 : 0 }}>:</span>{minutes}</span>
+            <span className="text-[10px]">{ampm}</span>
+          </div>
         </div>
 
         <NewsTicker dimensions={dimensions} />
@@ -287,34 +307,38 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
             <span className="text-[11px] font-bold uppercase tracking-widest text-star-gold">Wheel of Life</span>
             <span className="text-[10px] text-muted-purple">tap to {locked ? 'inspect' : 'adjust'}</span>
           </div>
-          {/* Container constrains SVG to a square that fits within available height */}
-          <div className="flex-1 min-h-0" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <RadarChart
-              values={dimensions}
-              locked={locked}
-              onAxisTap={handleAxisTap}
-              onAxisHover={setHoveredDimKey}
-              onChange={locked ? undefined : setDimension}
-              activeKey={activeDimKey}
-            />
-          </div>
-          {/* Floating tooltip card — overlays chart, label-hover only, no layout shift */}
-          {hoveredDim && (
-            <div
-              className="absolute left-4 right-4 z-10 pointer-events-none rounded-lg px-3 py-2"
-              style={{ bottom: 38, background: 'rgba(22,33,62,0.97)', border: '1px solid rgba(155,137,196,0.4)', boxShadow: '0 4px 14px rgba(0,0,0,0.45)' }}
-            >
-              <span className="font-bold text-[10px] text-star-gold">{hoveredDim.label} — </span>
-              <span className="text-[10px] text-muted-purple">{hoveredDim.desc}</span>
+          {/* Chart + legend side by side */}
+          <div className="flex-1 min-h-0 flex gap-3 min-w-0">
+            {/* Vertical legend list */}
+            <div className="flex flex-col justify-center gap-1.5 flex-shrink-0">
+              {DIMENSIONS.map((d) => (
+                <div key={d.key} className="flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-purple w-14 text-right">{d.short}</span>
+                  <span className="text-[11px] font-bold text-cloud-white">{displayDimensions[d.key]}</span>
+                </div>
+              ))}
             </div>
-          )}
-          {/* Legend — always visible */}
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 justify-center mt-1 flex-shrink-0">
-            {DIMENSIONS.map((d) => (
-              <span key={d.key} className="text-[9px] text-muted-purple">
-                {d.short} <span className="text-cloud-white font-bold">{dimensions[d.key]}</span>
-              </span>
-            ))}
+            {/* Radar */}
+            <div className="flex-1 min-h-0 min-w-0 relative" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <RadarChart
+                values={displayDimensions}
+                locked={locked}
+                onAxisTap={handleAxisTap}
+                onAxisHover={setHoveredDimKey}
+                onChange={locked ? undefined : setDimension}
+                activeKey={activeDimKey}
+              />
+              {/* Floating tooltip card — overlays chart, label-hover only */}
+              {hoveredDim && (
+                <div
+                  className="absolute left-0 right-0 bottom-0 z-10 pointer-events-none rounded-lg px-3 py-2"
+                  style={{ background: 'rgba(22,33,62,0.97)', border: '1px solid rgba(155,137,196,0.4)', boxShadow: '0 4px 14px rgba(0,0,0,0.45)' }}
+                >
+                  <span className="font-bold text-[10px] text-star-gold">{hoveredDim.label} — </span>
+                  <span className="text-[10px] text-muted-purple">{hoveredDim.desc}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -429,7 +453,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               </div>
               {/* Scrollable content */}
               <div className="flex-1 min-h-0 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
-                <DimPanel dim={activeDim} dimensions={dimensions} onClose={() => setActiveDimKey(null)} />
+                <DimPanel dim={activeDim} dimensions={displayDimensions} onClose={() => setActiveDimKey(null)} />
               </div>
             </motion.div>
           </motion.div>

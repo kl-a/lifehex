@@ -25,9 +25,7 @@ export function BottomNav({ active, onChange, onSettings }: Props) {
           className={`flex flex-col items-center gap-0.5 flex-1 py-2 transition-colors ${active === t.id ? 'text-butter' : 'text-muted-purple'}`}
         >
           {t.icon}
-          {active === t.id && (
-            <span className="font-bold text-[6px] tracking-wide">{t.label}</span>
-          )}
+          <span className={`font-bold text-[10px] tracking-wide ${active === t.id ? 'text-butter' : 'text-muted-purple'}`}>{t.label}</span>
         </button>
       ))}
       <button
@@ -35,6 +33,7 @@ export function BottomNav({ active, onChange, onSettings }: Props) {
         className="flex flex-col items-center gap-0.5 flex-1 py-2 text-muted-purple hover:text-cloud-white transition-colors"
       >
         <SettingsIcon />
+        <span className="font-bold text-[10px] tracking-wide">Settings</span>
       </button>
     </nav>
   );
