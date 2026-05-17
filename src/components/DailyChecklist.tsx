@@ -182,7 +182,7 @@ function CheckRow({ checked, label, timeIso, onTimeChange, onChange, disabled, d
 
   return (
     <div>
-      <div className="flex items-center gap-3 py-1.5">
+      <div className="flex items-center gap-3 py-1">
         {/* Checkbox */}
         <button
           onClick={() => !disabled && onChange(!checked)}
@@ -314,7 +314,7 @@ export function DailyChecklist({ isLuteal = false }: { isLuteal?: boolean }) {
   return (
     <div className="card-indigo">
       {/* Header with routine emoji triggers */}
-      <div className="flex items-center gap-2 mb-3">
+      <div className="flex items-center gap-2 mb-2">
         <span className="text-[11px] font-bold uppercase tracking-widest text-star-gold flex-1">Daily Checklist</span>
         {(['morning', 'lunch', 'bedtime'] as RoutineType[]).map((t) => (
           <button
@@ -424,7 +424,7 @@ export function DailyChecklist({ isLuteal = false }: { isLuteal?: boolean }) {
       </div>
 
       {/* Summary */}
-      <div className="mt-3 flex gap-3 flex-wrap">
+      <div className="mt-2 flex gap-3 flex-wrap">
         <span className="font-body text-[11px] text-muted-purple">
           Meals: <span className="text-cloud-white font-bold">{mealsLogged}/3</span>
         </span>

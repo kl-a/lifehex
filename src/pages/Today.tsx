@@ -429,7 +429,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
         </div>
 
         {/* RIGHT: Checklist + sessions + symptoms */}
-        <div className="min-h-0 overflow-y-auto flex flex-col gap-3 pr-1" style={{ scrollbarWidth: 'thin' }}>
+        <div className="min-h-0 overflow-y-auto flex flex-col gap-2 pr-1" style={{ scrollbarWidth: 'thin' }}>
           <DailyChecklist isLuteal={phaseInfo.phase === 'luteal'} />
 
           {todaySessions.length > 0 && (
@@ -438,7 +438,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
                 Sessions ({todaySessions.length})
               </div>
               <div className="flex flex-col gap-1.5">
-                {todaySessions.map((s) => {
+                {[...todaySessions].reverse().slice(0, 2).map((s) => {
                   const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
                   const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[s.confirmedZone];
                   const zLabel = { green: 'GREEN', amber: 'AMBER', red: 'RED' }[s.confirmedZone];

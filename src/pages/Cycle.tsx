@@ -200,17 +200,19 @@ function CyclePatternCard({ cyclePos }: { cyclePos: number }) {
         </div>
       </div>
 
-      {/* Hover tooltip */}
-      {hoveredDay !== null && (() => {
-        const avg = avgMood(hoveredDay);
-        const count = moodsByDay.get(hoveredDay)?.length ?? 0;
-        const flags = flagsByDay.has(hoveredDay) ? 1 : 0;
-        return (
-          <div className="font-body text-[11px] text-muted-purple text-center">
-            Day {hoveredDay} · {avg !== null ? `Avg mood ${avg.toFixed(1)}` : 'No data'} · {count} session{count !== 1 ? 's' : ''}{flags ? ' · 1 flag' : ''}
-          </div>
-        );
-      })()}
+      {/* Hover tooltip — fixed height so it never shifts layout */}
+      <div className="font-body text-[11px] text-center" style={{ height: 16 }}>
+        {hoveredDay !== null && (() => {
+          const avg = avgMood(hoveredDay);
+          const count = moodsByDay.get(hoveredDay)?.length ?? 0;
+          const flags = flagsByDay.has(hoveredDay) ? 1 : 0;
+          return (
+            <span className="text-muted-purple">
+              Day {hoveredDay} · {avg !== null ? `Avg mood ${avg.toFixed(1)}` : 'No data'} · {count} session{count !== 1 ? 's' : ''}{flags ? ' · 1 flag' : ''}
+            </span>
+          );
+        })()}
+      </div>
     </div>
   );
 }
@@ -319,10 +321,10 @@ export function Cycle() {
               <text x={cx} y={cy + 28} textAnchor="middle" fontFamily="'Press Start 2P'" fontWeight="700" fontSize="8" fill="#fdfcff">OF {total}</text>
             </svg>
             <div className="flex items-center gap-3">
-              <MoonIcon phase={phaseInfo.phase} size={22} />
+              <MoonIcon phase={phaseInfo.phase} size={26} />
               <div>
-                <div className="font-body text-[13px] font-bold text-cloud-white">{PHASE_COLORS[phaseInfo.phase].label}</div>
-                <div className="font-body text-[11px] text-muted-purple mt-0.5">
+                <div className="font-bold text-[13px] uppercase tracking-wide text-cloud-white">{PHASE_COLORS[phaseInfo.phase].label}</div>
+                <div className="font-body text-[13px] text-muted-purple mt-1">
                   {phaseInfo.phase === 'menstrual'
                     ? `Day ${phaseInfo.cyclePos} of ~${periodLen} period days`
                     : `Next period in ${daysUntilPeriod} day${daysUntilPeriod === 1 ? '' : 's'}`}
@@ -426,7 +428,7 @@ export function Cycle() {
             ) : (
               <div className="flex flex-col gap-2" style={{ maxHeight: 320, overflowY: 'auto', scrollbarWidth: 'thin' }}>
                 {cycles.map((c, i) => {
-                  const actualDays = c.cycleEndDate ? daysBetween(c.cycleStartDate, c.cycleEndDate) : null;
+                  const actualDays = c.cycleEndDate ? daysBetween(c.cycleStartDate, c.cycleEndDate) + 1 : null;
                   return (
                     <div key={c.id} className="rounded border border-muted-purple/20 bg-muted-purple/5 p-3">
                       {editingId === c.id ? (

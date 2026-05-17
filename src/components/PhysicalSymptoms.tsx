@@ -33,7 +33,7 @@ export function PhysicalSymptoms() {
         onClick={() => setOpen((v) => !v)}
         className="w-full flex items-center gap-2 text-left"
       >
-        <span className="font-bold text-[10px] uppercase tracking-widest text-muted-purple flex-shrink-0">
+        <span className="font-bold text-[10px] uppercase tracking-widest text-star-gold flex-shrink-0">
           {open ? '▼' : '▶'} Physical symptoms
         </span>
         {activeSymptoms.length > 0 ? (
