@@ -26,7 +26,7 @@ export function RegulationBadge({ zone, reasons = [], onOverride }: Props) {
         style={{ background: s.bg, border: `2px solid ${s.border}` }}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <span className="font-bold text-[8px] uppercase tracking-widest text-muted-purple flex-shrink-0">Today's Zone</span>
+          <span className="font-bold text-[8px] uppercase tracking-widest text-muted-purple flex-shrink-0">Current State</span>
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.dot }} />
             <span className="font-bold text-[11px] flex-shrink-0" style={{ color: s.dot }}>{s.label}</span>

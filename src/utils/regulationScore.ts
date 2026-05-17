@@ -13,9 +13,11 @@ export function getZoneReasons(inputs: RegulationInputs): string[] {
 }
 
 export function calculateZone(inputs: RegulationInputs): 'green' | 'amber' | 'red' {
-  // Hard floors — any core state below 4 always triggers at least amber
+  // Hard floor — any core state below 2 → red immediately
+  if (inputs.mood < 2 || inputs.energy < 2 || inputs.regulation < 2) return 'red';
+
+  // Hard floor — any core state below 4 → at least amber; still escalates to red if severe
   if (inputs.mood < 4 || inputs.energy < 4 || inputs.regulation < 4) {
-    // Still escalate to red if other signals are severe
     let risk = 0;
     if (inputs.mood < 4) risk += 1;
     if (inputs.energy < 4) risk += 1;
