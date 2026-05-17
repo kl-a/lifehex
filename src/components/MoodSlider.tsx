@@ -67,9 +67,11 @@ function VerticalSlider({ label, value, onChange, disabled, emojiForValue }: Omi
     return () => ro.disconnect();
   }, []);
 
-  // Thumb travels from 9px at top (value=10) to trackH-9 at bottom (value=1)
+  // Thumb centre at top (value=10) = THUMB_R, at bottom (value=1) = trackH - THUMB_R
+  // Emoji (18px tall) centred on thumb: top = thumbCentreY - 9
   const THUMB_R = 9;
-  const emojiTop = THUMB_R + ((10 - value) / 9) * (trackH - THUMB_R * 2) - 12;
+  const thumbCentreY = THUMB_R + ((10 - value) / 9) * (trackH - THUMB_R * 2);
+  const emojiTop = thumbCentreY - 9;
 
   return (
     <div

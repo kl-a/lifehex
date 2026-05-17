@@ -188,7 +188,22 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
   function handleToggleLock() {
     if (locked) {
       const last = sessions[sessions.length - 1];
-      unlock(last?.dimensions ?? dimensions, last?.mood ?? mood, last?.energy ?? energy, last?.emotionalRegulation ?? regulation);
+      // Merge last session dimensions over defaults — guards against old-format sessions
+      // stored in localStorage that may have missing or renamed keys from before v3
+      const safeDims: DimensionScores = {
+        ...dimensions,
+        ...(last?.dimensions ?? {}),
+        // Ensure all 8 v3 keys exist; any missing ones fall back to current store value
+        healthBody: (last?.dimensions as any)?.healthBody ?? dimensions.healthBody,
+        mentalWellbeing: (last?.dimensions as any)?.mentalWellbeing ?? dimensions.mentalWellbeing,
+        relationships: (last?.dimensions as any)?.relationships ?? dimensions.relationships,
+        family: (last?.dimensions as any)?.family ?? dimensions.family,
+        workCareer: (last?.dimensions as any)?.workCareer ?? dimensions.workCareer,
+        creativeArt: (last?.dimensions as any)?.creativeArt ?? dimensions.creativeArt,
+        restRecovery: (last?.dimensions as any)?.restRecovery ?? dimensions.restRecovery,
+        nourishment: (last?.dimensions as any)?.nourishment ?? dimensions.nourishment,
+      };
+      unlock(safeDims, last?.mood ?? mood, last?.energy ?? energy, last?.emotionalRegulation ?? regulation);
     } else {
       const newSession: Session = {
         id: uuid(),
@@ -256,21 +271,20 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
         style={{ gridTemplateColumns: '1fr 190px 1fr' }}
       >
         {/* LEFT: Wheel of Life */}
-        <div className="card-indigo flex flex-col min-h-0 overflow-hidden">
+        <div className="card-indigo flex flex-col min-h-0">
           <div className="flex justify-between items-center mb-2 flex-shrink-0">
             <span className="text-[11px] font-bold uppercase tracking-widest text-star-gold">Wheel of Life</span>
             <span className="text-[10px] text-muted-purple">tap to {locked ? 'inspect' : 'adjust'}</span>
           </div>
-          <div className="flex-1 min-h-0 flex items-center justify-center">
-            <div className="w-full h-full flex items-center justify-center" style={{ maxWidth: '100%', maxHeight: '100%' }}>
-              <RadarChart
-                values={dimensions}
-                locked={locked}
-                onAxisTap={handleAxisTap}
-                onChange={locked ? undefined : setDimension}
-                activeKey={activeDimKey}
-              />
-            </div>
+          {/* Container constrains SVG to a square that fits within available height */}
+          <div className="flex-1 min-h-0" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <RadarChart
+              values={dimensions}
+              locked={locked}
+              onAxisTap={handleAxisTap}
+              onChange={locked ? undefined : setDimension}
+              activeKey={activeDimKey}
+            />
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-0.5 justify-center mt-1 flex-shrink-0">
             {DIMENSIONS.map((d) => (
