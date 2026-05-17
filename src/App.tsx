@@ -17,9 +17,11 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { ensureToday } = useDayStore();
 
-  // Archive yesterday and reset checklist whenever the app is opened on a new day
+  // Archive yesterday and reset checklist on mount and every minute (catches midnight rollover)
   useEffect(() => {
     ensureToday();
+    const interval = setInterval(ensureToday, 60_000);
+    return () => clearInterval(interval);
   }, []);
 
   const { cycles } = useCycleStore();
