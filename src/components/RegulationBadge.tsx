@@ -19,9 +19,9 @@ export function RegulationBadge({ zone, onOverride }: Props) {
   const s = ZONE_STYLES[zone];
 
   return (
-    <div className="relative">
+    <div className="relative h-full">
       <div
-        className="flex items-center gap-3 px-4 py-2.5 rounded"
+        className="flex items-center gap-3 px-4 py-2.5 rounded h-full"
         style={{ background: s.bg, border: `2px solid ${s.border}` }}
       >
         <span className="font-bold text-[8px] uppercase tracking-widest text-muted-purple">Today's Zone</span>

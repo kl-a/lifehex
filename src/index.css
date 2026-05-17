@@ -128,7 +128,7 @@
     writing-mode: vertical-lr;
     direction: rtl;
     width: 6px;
-    height: 240px;
+    height: 100%;
     background: rgba(155,137,196,0.15);
     border-radius: 6px;
     outline: none;
