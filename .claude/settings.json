@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(open /Users/kellytsang/git-repo/wheel_of_life/LifeHex.html)",
+      "Bash(python3 -m http.server 8080)",
+      "Bash(echo \"Server PID: $!\")",
+      "Bash(open \"http://localhost:8080/LifeHex.html\")",
+      "Bash(kill 31330)",
+      "Bash(kill 31447)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(cat /tmp/lifehex-server.log)",
+      "Read(//private/tmp/**)",
+      "Bash(lsof -ti:8080)",
+      "Bash(xargs kill -9)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/LifeHex.html)",
+      "Bash(lsof -ti:8080 | xargs kill -9 2>/dev/null; python3 -m http.server 8080 > /tmp/lifehex-server.log 2>&1 & *)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s http://localhost:8080/today-bits.jsx)",
+      "Bash(curl -s http://localhost:8080/screens-1.jsx)",
+      "Bash(curl -s -o /dev/null -w \"server: %{http_code}\" http://localhost:8080/LifeHex.html)",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('today-bits.jsx','utf8'\\);let b=0;for\\(const c of s\\){if\\(c==='{'\\)b++;if\\(c==='}'\\)b--;}console.log\\('balance:',b\\)\")",
+      "Bash(npm --version)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npx tailwindcss *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/lifehex/)",
+      "Bash(pkill -f \"vite\")",
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(npx tsc *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ],
+    "additionalDirectories": [
+      "/private/tmp"
+    ]
+  }
+}

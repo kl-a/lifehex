@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #1a1a2e;
+    color: #fdfcff;
+    font-family: 'Nunito', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* ── Cards ── */
+  .card-indigo {
+    @apply bg-deep-indigo border border-muted-purple/25 p-4;
+    border-radius: 14px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .card-base {
+    @apply bg-night-sky border border-muted-purple/20;
+    border-radius: 10px;
+  }
+
+  /* ── Buttons ── */
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2
+           text-sm font-semibold
+           border border-muted-purple/50 text-muted-purple
+           px-4 py-2 transition-all cursor-pointer;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .btn-ghost:hover  { @apply text-cloud-white border-muted-purple/80 bg-muted-purple/10; }
+  .btn-ghost:active { @apply scale-[0.98]; }
+  .btn-ghost:disabled { @apply opacity-40 cursor-not-allowed; }
+
+  .btn-mint {
+    @apply inline-flex items-center justify-center gap-2
+           text-sm font-semibold
+           border border-mint-shadow/60 text-mint-green
+           px-4 py-2 transition-all cursor-pointer;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(106,171,144,0.2);
+  }
+  .btn-mint:active { @apply scale-[0.98]; }
+
+  .btn-butter {
+    @apply inline-flex items-center justify-center gap-2
+           text-sm font-bold text-pixel-black
+           border border-butter-shadow/50
+           px-4 py-2 transition-all cursor-pointer;
+    background: #ffe066;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(255,224,102,0.25);
+  }
+  .btn-butter:hover  { background: #ffeaa7; }
+  .btn-butter:active { @apply scale-[0.98]; }
+
+  .btn-blush {
+    @apply inline-flex items-center justify-center gap-2
+           text-sm font-semibold text-pixel-black
+           border border-blush-shadow/50
+           px-4 py-2 transition-all cursor-pointer;
+    background: #f7cac9;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(247,202,201,0.2);
+  }
+  .btn-blush:active   { @apply scale-[0.98]; }
+  .btn-blush:disabled { @apply opacity-40 cursor-not-allowed; }
+
+  /* ── Chips ── */
+  .chip {
+    @apply flex items-center gap-2 px-3 py-1.5
+           border border-muted-purple/25 text-lilac-shadow
+           text-[12px] font-semibold transition-all cursor-pointer;
+    border-radius: 20px;
+    background: rgba(155,137,196,0.06);
+  }
+  .chip:hover { @apply border-muted-purple/50 text-cloud-white bg-muted-purple/10; }
+  .chip-on {
+    @apply border-mint-shadow/50 text-mint-green;
+    background: rgba(181,234,215,0.12);
+    box-shadow: 0 0 10px rgba(106,171,144,0.2);
+  }
+  .chip-readonly {
+    @apply flex items-center px-3 py-1.5 border text-[12px] font-semibold;
+    border-radius: 20px;
+    background: rgba(155,137,196,0.05);
+  }
+
+  /* ── Sliders ── */
+  .pixslider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    background: rgba(155,137,196,0.15);
+    border-radius: 6px;
+    outline: none;
+  }
+  .pixslider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffe066;
+    border: 2px solid #c9a84c;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(255,224,102,0.4);
+  }
+  .pixslider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffe066;
+    border: 2px solid #c9a84c;
+    cursor: pointer;
+  }
+
+  /* ── Vertical mood slider ── */
+  .pixslider-vert {
+    -webkit-appearance: none;
+    appearance: none;
+    writing-mode: vertical-lr;
+    direction: rtl;
+    width: 6px;
+    height: 240px;
+    background: rgba(155,137,196,0.15);
+    border-radius: 6px;
+    outline: none;
+    cursor: pointer;
+  }
+  .pixslider-vert::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffe066;
+    border: 2px solid #c9a84c;
+    box-shadow: 0 2px 8px rgba(255,224,102,0.4);
+  }
+
+  /* ── News ticker ── */
+  .ticker-inner {
+    animation: ticker-scroll 60s linear infinite;
+    display: inline-flex;
+    white-space: nowrap;
+  }
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+}
