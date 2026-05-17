@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BottomNav } from './components/BottomNav';
 import { Today } from './pages/Today';
 import { Calendar } from './pages/Calendar';
@@ -7,6 +7,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Settings } from './pages/Settings';
 import { useCycleStore } from './store/cycleStore';
 import { useSettingsStore } from './store/settingsStore';
+import { useDayStore } from './store/dayStore';
 import { getCyclePhase, isoDate } from './utils/cyclePredictor';
 
 type Tab = 'today' | 'calendar' | 'cycle' | 'dashboard';
@@ -14,6 +15,12 @@ type Tab = 'today' | 'calendar' | 'cycle' | 'dashboard';
 export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { ensureToday } = useDayStore();
+
+  // Archive yesterday and reset checklist whenever the app is opened on a new day
+  useEffect(() => {
+    ensureToday();
+  }, []);
 
   const { cycles } = useCycleStore();
   const { expectedCycleLength: cycleLen, expectedPeriodLength: periodLen } = useSettingsStore();
