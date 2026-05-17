@@ -1,42 +1,47 @@
-import { MOOD_EMOJI } from '../data/constants';
-
 interface Props {
+  label: string;
+  sublabel?: string;
   value: number;
   onChange: (v: number) => void;
   disabled?: boolean;
+  emojiForValue: (v: number) => string;
 }
 
-export function MoodSlider({ value, onChange, disabled = false }: Props) {
-  const pct = ((value - 1) / 9) * 100;
-  const TRACK_H = 240;
-  const emojiTop = Math.round(219 - (pct / 100) * 218);
-
+export function MoodSlider({ label, sublabel, value, onChange, disabled = false, emojiForValue }: Props) {
   return (
-    <div
-      className="flex flex-col items-center gap-0 select-none flex-shrink-0 py-1"
-      style={{ opacity: disabled ? 0.65 : 1 }}
-    >
-      <span className="font-bold text-[8px] text-butter mb-1 tracking-wide">Mood</span>
-      <span className="font-bold text-[9px] text-butter mb-1">10</span>
-
-      <div className="relative" style={{ width: 44, height: TRACK_H }}>
-        <span
-          className="absolute pointer-events-none"
-          style={{ top: emojiTop, left: 2, fontSize: 18, lineHeight: 1, transition: 'top 60ms ease' }}
-        >
-          {MOOD_EMOJI(value)}
-        </span>
-        <input
-          type="range" min="1" max="10" step="1"
-          value={value}
-          disabled={disabled}
-          onChange={(e) => onChange(parseInt(e.target.value, 10))}
-          className="pixslider-vert absolute right-0 top-0"
-        />
+    <div style={{ opacity: disabled ? 0.55 : 1, pointerEvents: disabled ? 'none' : 'auto' }}>
+      <div className="flex items-baseline gap-2 mb-2">
+        <span className="font-bold text-[10px] uppercase tracking-widest text-star-gold">{label}</span>
+        {sublabel && <span className="font-body text-[11px] text-muted-purple">{sublabel}</span>}
+        <span className="ml-auto font-bold text-[12px] text-cloud-white">{value}<span className="text-muted-purple text-[10px]">/10</span></span>
       </div>
 
-      <span className="font-bold text-[9px] text-lilac-shadow mt-1">1</span>
-      <span className="font-bold text-[11px] text-butter mt-1">{value}</span>
+      <div className="flex items-center gap-3">
+        <span className="text-[26px] leading-none flex-shrink-0 w-8 text-center" style={{ transition: 'opacity 80ms' }}>
+          {emojiForValue(value)}
+        </span>
+        <div className="relative flex-1" style={{ height: 24 }}>
+          <input
+            type="range" min="1" max="10" step="1"
+            value={value}
+            disabled={disabled}
+            onChange={(e) => onChange(parseInt(e.target.value, 10))}
+            className="pixslider w-full absolute inset-0"
+            style={{ height: '100%' }}
+          />
+        </div>
+      </div>
+
+      {/* Tick marks */}
+      <div className="flex justify-between mt-1" style={{ paddingLeft: 44 }}>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+          <span
+            key={n}
+            className="font-bold text-[8px]"
+            style={{ color: n === value ? '#ffe066' : 'rgba(155,137,196,0.35)' }}
+          >{n}</span>
+        ))}
+      </div>
     </div>
   );
 }

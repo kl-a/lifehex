@@ -1,10 +1,34 @@
 export interface DimensionScores {
-  creative: number;
-  connection: number;
-  restoration: number;
-  boundaries: number;
-  meaningfulWork: number;
-  physicalHealth: number;
+  healthBody: number;
+  mentalWellbeing: number;
+  relationships: number;
+  family: number;
+  workCareer: number;
+  creativeArt: number;
+  restRecovery: number;
+  nourishment: number;
+}
+
+export interface RegulationInputs {
+  mood: number;
+  energy: number;
+  regulation: number;
+  isLutealPhase: boolean;
+  medicationTaken: boolean;
+  isWeekday: boolean;
+  symptomCount: number;
+  thatWasntMeToday: boolean;
+  sleepQuality: number | null;
+  mealsLogged: number;
+  gymToday: boolean;
+}
+
+export interface ZoneOverride {
+  sessionId: string;
+  date: string;
+  systemSuggested: 'green' | 'amber' | 'red';
+  userConfirmed: 'green' | 'amber' | 'red';
+  inputsSnapshot: RegulationInputs;
 }
 
 export interface Session {
@@ -12,7 +36,45 @@ export interface Session {
   timestamp: string;
   dimensions: DimensionScores;
   mood: number;
-  tags: string[];
+  energy: number;
+  emotionalRegulation: number;
+  systemZone: 'green' | 'amber' | 'red';
+  confirmedZone: 'green' | 'amber' | 'red';
+  zoneOverride: ZoneOverride | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MealLog {
+  meal: 'breakfast' | 'lunch' | 'dinner';
+  logged: boolean;
+  loggedTime: string | null;
+  note: string;
+  properBreak: boolean;
+}
+
+export interface DayRecord {
+  id: string;
+  date: string;
+  medicationTaken: boolean;
+  medicationTime: string | null;
+  meals: MealLog[];
+  lunchBreakTaken: boolean;
+  lunchBreakTime: string | null;
+  gymToday: boolean;
+  gymTime: string | null;
+  aloneTimeToday: boolean;
+  aloneTimeStart: string | null;
+  symptoms: string[];
+  brainFog: number | null;
+  workingMemoryImpaired: boolean;
+  focusQuality: number | null;
+  sleepHours: number | null;
+  sleepQuality: number | null;
+  thatWasntMe: boolean;
+  thatWasntMeNote: string;
+  moodAverage: number | null;
+  dominantZone: 'green' | 'amber' | 'red' | null;
   created_at: string;
   updated_at: string;
 }
@@ -30,15 +92,14 @@ export interface CycleEntry {
 export interface Settings {
   expectedCycleLength: number;
   expectedPeriodLength: number;
+  morningRoutineTime: string;
+  lunchNudgeTime: string;
+  bedtimeRoutineTime: string;
+  weekdayMedicationTracking: boolean;
   driveConnected: boolean;
   lastSyncedAt: string | null;
-}
-
-export interface Tag {
-  id: string;
-  label: string;
-  em: string;
-  group: string;
+  moodAlertThreshold: number;
+  googleCalendarConnected: boolean;
 }
 
 export interface Dimension {

@@ -30,13 +30,14 @@ export function Dashboard() {
   const avg7 = avg(sessionsInRange(sessions, 7));
   const avg30 = avg(sessionsInRange(sessions, 30));
 
-  const tagCounts: Record<string, number> = {};
-  inRange.forEach((s) => s.tags?.forEach((t) => { tagCounts[t] = (tagCounts[t] ?? 0) + 1; }));
-  const topTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const zoneCounts = { green: 0, amber: 0, red: 0 };
+  inRange.forEach((s) => { zoneCounts[s.confirmedZone] = (zoneCounts[s.confirmedZone] ?? 0) + 1; });
 
   const moodData = inRange.map((s) => ({
     date: new Date(s.timestamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
     mood: s.mood,
+    energy: s.energy ?? undefined,
+    regulation: s.emotionalRegulation ?? undefined,
   }));
 
   const radarData7 = DIMENSIONS.map((d) => ({ subject: d.short, v7: avg7[d.key], v30: avg30[d.key] }));
@@ -85,6 +86,8 @@ export function Dashboard() {
               <YAxis domain={[1, 10]} tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} />
               <Tooltip contentStyle={{ background: '#16213e', border: '1px solid #9b89c4', borderRadius: 4, fontFamily: 'Nunito', fontSize: 12 }} />
               <Line type="monotone" dataKey="mood" stroke="#ffe066" strokeWidth={2.5} dot={{ fill: '#ffe066', r: 3, strokeWidth: 0 }} activeDot={{ r: 6, fill: '#ffe066' }} />
+              <Line type="monotone" dataKey="energy" stroke="#b5ead7" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
+              <Line type="monotone" dataKey="regulation" stroke="#c9b8f0" strokeWidth={1.5} dot={false} strokeDasharray="2 3" />
             </LineChart>
           </ResponsiveContainer>
         )}
@@ -110,23 +113,29 @@ export function Dashboard() {
         </div>
 
         <div className="card-indigo">
-          <div className="font-bold text-[8px] text-star-gold mb-3">Top Tags</div>
-          {topTags.length === 0 ? (
-            <p className="font-body text-[12px] text-lilac-shadow">No tags in this range yet.</p>
+          <div className="font-bold text-[8px] text-star-gold mb-3">Zone Distribution</div>
+          {inRange.length === 0 ? (
+            <p className="font-body text-[12px] text-lilac-shadow">No sessions in this range yet.</p>
           ) : (
-            <div className="flex flex-col gap-2">
-              {topTags.map(([id, count]) => {
-                const max = topTags[0][1];
+            <div className="flex flex-col gap-3">
+              {([['green', '#b5ead7', '#6aab90'], ['amber', '#ffeaa7', '#c9a84c'], ['red', '#f7cac9', '#c98a88']] as const).map(([z, fill, border]) => {
+                const count = zoneCounts[z] ?? 0;
+                const max = Math.max(...Object.values(zoneCounts), 1);
                 return (
-                  <div key={id} className="flex items-center gap-2">
-                    <span className="font-body text-[11px] text-cloud-white w-16 truncate">{id}</span>
+                  <div key={z} className="flex items-center gap-2">
+                    <span className="font-bold text-[9px] uppercase w-10" style={{ color: fill }}>{z}</span>
                     <div className="flex-1 h-2 bg-muted-purple/15 rounded overflow-hidden">
-                      <div className="h-full bg-butter rounded" style={{ width: `${(count / max) * 100}%` }} />
+                      <div className="h-full rounded" style={{ width: `${(count / max) * 100}%`, background: fill, border: `1px solid ${border}` }} />
                     </div>
-                    <span className="font-bold text-[8px] text-butter w-5 text-right">{count}</span>
+                    <span className="font-bold text-[9px] w-5 text-right" style={{ color: fill }}>{count}</span>
                   </div>
                 );
               })}
+              <div className="flex gap-3 mt-1">
+                <LegendDot color="#b5ead7" label="Energy" />
+                <LegendDot color="#c9b8f0" label="Regulation" />
+                <LegendDot color="#ffe066" label="Mood" />
+              </div>
             </div>
           )}
         </div>
