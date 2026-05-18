@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PadlockIcon } from '../components/PadlockIcon';
+import { SyncBadge } from '../components/SyncBadge';
 import { PeriodStrip } from '../components/PeriodStrip';
 import { RadarChart } from '../components/RadarChart';
 import { MoodSlider } from '../components/MoodSlider';
@@ -203,23 +204,15 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
   const [hoveredDimKey, setHoveredDimKey] = useState<keyof DimensionScores | null>(null);
   const [confirmedZone, setConfirmedZone] = useState<'green' | 'amber' | 'red'>('green');
   const [clockNow, setClockNow] = useState(new Date());
-  const [colonVisible, setColonVisible] = useState(true);
-
   useEffect(() => {
-    const tick = setInterval(() => {
-      const n = new Date();
-      setClockNow(n);
-      setColonVisible(n.getSeconds() % 2 === 0);
-    }, 1000);
+    const tick = setInterval(() => setClockNow(new Date()), 1000);
     return () => clearInterval(tick);
   }, []);
 
   const now = clockNow;
-  const dateLabel = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' });
-  const hours = now.getHours();
-  const minutes = now.getMinutes().toString().padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const hour12 = hours % 12 || 12;
+  const dateLabel = now.toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long' })
+    + ' · '
+    + now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
   const lastSavedLabel = lastSavedISO
     ? new Date(lastSavedISO).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false })
     : null;
@@ -317,9 +310,8 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
             <span>{locked ? 'Locked' : 'Open — tap to save'}</span>
             {lastSavedLabel && <span className="text-[10px] text-muted-purple">· {lastSavedLabel}</span>}
           </button>
-          <div className="flex justify-end items-baseline gap-1 font-bold text-star-gold">
-            <span className="text-lg">{hour12}<span style={{ opacity: colonVisible ? 1 : 0 }}>:</span>{minutes}</span>
-            <span className="text-[10px]">{ampm}</span>
+          <div className="flex justify-end">
+            <SyncBadge />
           </div>
         </div>
 
@@ -447,7 +439,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               <div className="font-body text-[12px] text-muted-purple/50">No sessions yet — lock a state to save one.</div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {[...todaySessions].reverse().slice(0, 2).map((s) => {
+                {[...todaySessions].reverse().map((s) => {
                   const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
                   const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[s.confirmedZone];
                   const zLabel = { green: 'GREEN', amber: 'AMBER', red: 'RED' }[s.confirmedZone];

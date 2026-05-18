@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { PageHeader } from '../components/PageHeader';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ReferenceArea,
@@ -567,25 +568,23 @@ export function Dashboard() {
   return (
     <div className="flex flex-col gap-2 overflow-hidden" style={{ height: 'calc(100vh - 104px)' }}>
 
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <div className="font-bold text-[11px] uppercase tracking-widest text-star-gold">Dashboard</div>
-          <div className="font-body text-[11px] text-muted-purple mt-0.5">Trends · History · Drift</div>
-        </div>
-        <div className="flex rounded overflow-hidden" style={{ border: '1px solid rgba(155,137,196,0.4)' }}>
-          {([7, 30, 90] as const).map(r => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`font-bold text-[8px] px-3 py-2 transition-colors ${range === r ? 'text-butter' : 'text-muted-purple hover:text-cloud-white'}`}
-              style={{ background: range === r ? 'rgba(155,137,196,0.2)' : 'transparent' }}
-            >
-              {r}d
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        title="Stats"
+        right={
+          <div className="flex rounded overflow-hidden" style={{ border: '1px solid rgba(155,137,196,0.4)' }}>
+            {([7, 30, 90] as const).map(r => (
+              <button
+                key={r}
+                onClick={() => setRange(r)}
+                className={`font-bold text-[8px] px-3 py-2 transition-colors ${range === r ? 'text-butter' : 'text-muted-purple hover:text-cloud-white'}`}
+                style={{ background: range === r ? 'rgba(155,137,196,0.2)' : 'transparent' }}
+              >
+                {r}d
+              </button>
+            ))}
+          </div>
+        }
+      />
 
       {/* Headline card */}
       <div className="card-indigo flex-shrink-0">

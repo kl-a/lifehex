@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MoonIcon } from '../components/MoonIcon';
+import { PageHeader } from '../components/PageHeader';
 import { useCycleStore } from '../store/cycleStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { useHistoryStore } from '../store/historyStore';
@@ -297,7 +298,7 @@ export function Cycle() {
 
   return (
     <div className="flex flex-col gap-3 pb-6">
-      <div className="font-bold text-[11px] uppercase tracking-widest text-star-gold">Cycle</div>
+      <PageHeader title="Cycle" />
 
       <div className="grid gap-3" style={{ gridTemplateColumns: '1fr 1.5fr', alignItems: 'start' }}>
 

@@ -98,6 +98,7 @@ export interface Settings {
   weekdayMedicationTracking: boolean;
   driveConnected: boolean;
   lastSyncedAt: string | null;
+  updated_at: string;
   moodAlertThreshold: number;
   googleCalendarConnected: boolean;
 }
