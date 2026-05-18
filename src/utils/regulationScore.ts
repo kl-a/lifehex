@@ -13,31 +13,14 @@ export function getZoneReasons(inputs: RegulationInputs): string[] {
 }
 
 export function calculateZone(inputs: RegulationInputs): 'green' | 'amber' | 'red' {
-  // Hard floor — any core state below 2 → red immediately
-  if (inputs.mood < 2 || inputs.energy < 2 || inputs.regulation < 2) return 'red';
-
-  // Hard floor — any core state below 4 → at least amber; still escalates to red if severe
-  if (inputs.mood < 4 || inputs.energy < 4 || inputs.regulation < 4) {
-    let risk = 0;
-    if (inputs.mood < 4) risk += 1;
-    if (inputs.energy < 4) risk += 1;
-    if (inputs.regulation < 4) risk += 2;
-    if (inputs.thatWasntMeToday) risk += 2;
-    if (inputs.symptomCount >= 3) risk += 2;
-    if (inputs.isLutealPhase) risk += 1;
-    return risk >= 6 ? 'red' : 'amber';
-  }
+  // Hard floor — any core state at 3 or below → red immediately
+  if (inputs.mood <= 3 || inputs.energy <= 3 || inputs.regulation <= 3) return 'red';
 
   let risk = 0;
 
-  if (inputs.mood <= 3) risk += 3;
-  else if (inputs.mood <= 5) risk += 1;
-
-  if (inputs.energy <= 3) risk += 2;
-  else if (inputs.energy <= 5) risk += 1;
-
-  if (inputs.regulation <= 3) risk += 3;
-  else if (inputs.regulation <= 5) risk += 1;
+  if (inputs.mood <= 5) risk += 1;
+  if (inputs.energy <= 5) risk += 1;
+  if (inputs.regulation <= 5) risk += 1;
 
   if (inputs.isLutealPhase) risk += 1;
   if (inputs.isWeekday && !inputs.medicationTaken) risk += 1;

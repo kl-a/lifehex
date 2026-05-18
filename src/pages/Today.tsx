@@ -310,7 +310,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
             <span>{locked ? 'Locked' : 'Open — tap to save'}</span>
             {lastSavedLabel && <span className="text-[10px] text-muted-purple">· {lastSavedLabel}</span>}
           </button>
-          <div className="flex justify-end">
+          <div className="flex justify-end items-center gap-2">
             <SyncBadge />
           </div>
         </div>

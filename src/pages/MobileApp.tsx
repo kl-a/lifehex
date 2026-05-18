@@ -143,7 +143,12 @@ function DimSlider({ value, onChange, disabled }: { value: number; onChange: (v:
 function ZoneBadge({ zone, reasons, onTap }: { zone: Zone; reasons: string[]; onTap: () => void }) {
   const s = ZONE_STYLE[zone];
   return (
-    <button onClick={onTap} style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 6, padding: '6px 10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, cursor: 'pointer', minWidth: 80, boxShadow: `2px 2px 0px ${s.border}` }}>
+    <motion.button
+      onClick={onTap}
+      animate={zone === 'red' ? { opacity: [1, 0.45, 1] } : { opacity: 1 }}
+      transition={zone === 'red' ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
+      style={{ background: s.bg, border: `1.5px solid ${s.border}`, borderRadius: 6, padding: '6px 10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 3, cursor: 'pointer', minWidth: 80, boxShadow: `2px 2px 0px ${s.border}` }}
+    >
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
         <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.dot, display: 'inline-block', flexShrink: 0 }} />
         <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: s.dot }}>{s.label}</span>
@@ -153,7 +158,7 @@ function ZoneBadge({ zone, reasons, onTap }: { zone: Zone; reasons: string[]; on
           {reasons.slice(0, 2).join(' · ')}
         </span>
       )}
-    </button>
+    </motion.button>
   );
 }
 

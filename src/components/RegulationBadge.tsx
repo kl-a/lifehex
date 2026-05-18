@@ -21,9 +21,11 @@ export function RegulationBadge({ zone, reasons = [], onOverride }: Props) {
 
   return (
     <div className="relative h-full">
-      <div
+      <motion.div
         className="flex flex-col justify-between px-4 py-3 rounded h-full"
         style={{ background: s.bg, border: `2px solid ${s.border}` }}
+        animate={zone === 'red' ? { opacity: [1, 0.45, 1] } : { opacity: 1 }}
+        transition={zone === 'red' ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : { duration: 0 }}
       >
         {/* Top row: label left, override right */}
         <div className="flex items-center justify-between">
@@ -44,7 +46,7 @@ export function RegulationBadge({ zone, reasons = [], onOverride }: Props) {
             <span className="font-body text-[10px] text-muted-purple">{reasons.join(' · ')}</span>
           )}
         </div>
-      </div>
+      </motion.div>
 
       <AnimatePresence>
         {showPicker && (
