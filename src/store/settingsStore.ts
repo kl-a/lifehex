@@ -13,6 +13,8 @@ interface SettingsStore extends Settings {
   setWeekdayMedicationTracking: (v: boolean) => void;
 }
 
+const touch = () => ({ updated_at: new Date().toISOString() });
+
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set) => ({
@@ -24,16 +26,17 @@ export const useSettingsStore = create<SettingsStore>()(
       weekdayMedicationTracking: true,
       driveConnected: false,
       lastSyncedAt: null,
+      updated_at: new Date().toISOString(),
       moodAlertThreshold: 5,
       googleCalendarConnected: false,
-      setExpectedCycleLength: (n) => set({ expectedCycleLength: n }),
-      setExpectedPeriodLength: (n) => set({ expectedPeriodLength: n }),
-      setDriveConnected: (v) => set({ driveConnected: v }),
+      setExpectedCycleLength: (n) => set({ expectedCycleLength: n, ...touch() }),
+      setExpectedPeriodLength: (n) => set({ expectedPeriodLength: n, ...touch() }),
+      setDriveConnected: (v) => set({ driveConnected: v, ...touch() }),
       setLastSyncedAt: (iso) => set({ lastSyncedAt: iso }),
-      setMorningRoutineTime: (t) => set({ morningRoutineTime: t }),
-      setLunchNudgeTime: (t) => set({ lunchNudgeTime: t }),
-      setBedtimeRoutineTime: (t) => set({ bedtimeRoutineTime: t }),
-      setWeekdayMedicationTracking: (v) => set({ weekdayMedicationTracking: v }),
+      setMorningRoutineTime: (t) => set({ morningRoutineTime: t, ...touch() }),
+      setLunchNudgeTime: (t) => set({ lunchNudgeTime: t, ...touch() }),
+      setBedtimeRoutineTime: (t) => set({ bedtimeRoutineTime: t, ...touch() }),
+      setWeekdayMedicationTracking: (v) => set({ weekdayMedicationTracking: v, ...touch() }),
     }),
     { name: 'lifehex_settings' }
   )

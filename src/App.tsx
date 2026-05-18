@@ -9,6 +9,7 @@ import { useCycleStore } from './store/cycleStore';
 import { useSettingsStore } from './store/settingsStore';
 import { useDayStore } from './store/dayStore';
 import { getCyclePhase, isoDate } from './utils/cyclePredictor';
+import { useDriveSync } from './hooks/useDriveSync';
 
 type Tab = 'today' | 'calendar' | 'cycle' | 'dashboard';
 
@@ -16,6 +17,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('today');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { ensureToday } = useDayStore();
+  useDriveSync();
 
   // Archive yesterday and reset checklist on mount and every minute (catches midnight rollover)
   useEffect(() => {
