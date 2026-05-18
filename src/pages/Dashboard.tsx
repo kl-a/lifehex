@@ -281,7 +281,7 @@ function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
   ];
 
   return (
-    <div className="card-indigo flex flex-col gap-3">
+    <div className="card-indigo flex-shrink-0 flex flex-col gap-2">
       <div>
         <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold">Your Cycle Pattern</div>
         <div className="font-body text-[11px] text-muted-purple mt-0.5">
@@ -331,7 +331,7 @@ function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
             <div key={day} className="flex-1 flex flex-col items-center gap-0.5"
               onMouseEnter={() => setHoveredDay(day)} onMouseLeave={() => setHoveredDay(null)}>
               <div className="w-full rounded-sm" style={{
-                height: 36,
+                height: 24,
                 background: moodFill(avg),
                 border: isToday ? '2px solid #ffe066' : moodBorder(avg),
                 boxShadow: isToday ? '0 0 6px rgba(255,224,102,0.5)' : 'none',
@@ -463,13 +463,23 @@ export function Dashboard() {
     }
   }
 
-  // ── feeling chart data ──
-  const feelingData = inRange.map(s => ({
-    date: new Date(s.timestamp).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
-    mood: s.mood,
-    energy: s.energy,
-    reg: s.emotionalRegulation,
-  }));
+  // ── feeling chart data (aggregated per day to avoid duplicate x-axis labels) ──
+  const sessionsByLocalDate = new Map<string, Session[]>();
+  for (const s of inRange) {
+    const d = new Date(s.timestamp);
+    const localDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const arr = sessionsByLocalDate.get(localDate) ?? [];
+    arr.push(s);
+    sessionsByLocalDate.set(localDate, arr);
+  }
+  const feelingData = Array.from(sessionsByLocalDate.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([dateStr, daySessions]) => ({
+      date: new Date(dateStr + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
+      mood: +(avgArr(daySessions.map(s => s.mood))!.toFixed(1)),
+      energy: +(avgArr(daySessions.map(s => s.energy))!.toFixed(1)),
+      reg: +(avgArr(daySessions.map(s => s.emotionalRegulation))!.toFixed(1)),
+    }));
 
   // Luteal reference areas for feeling chart
   const lutealBands: { x1: string; x2: string }[] = [];
@@ -555,7 +565,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col gap-3 pb-16">
+    <div className="flex flex-col gap-2 overflow-hidden" style={{ height: 'calc(100vh - 104px)' }}>
 
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -578,8 +588,8 @@ export function Dashboard() {
       </div>
 
       {/* Headline card */}
-      <div className="card-indigo">
-        <div className="font-body text-[14px] leading-relaxed mb-4" style={{ color: synthesis.color }}>
+      <div className="card-indigo flex-shrink-0">
+        <div className="font-body text-[14px] leading-relaxed mb-2" style={{ color: synthesis.color }}>
           {synthesis.text}
         </div>
         <div className="grid grid-cols-4 gap-2">
@@ -596,19 +606,21 @@ export function Dashboard() {
       </div>
 
       {/* Main two-column area */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: '2fr 1fr', alignItems: 'start' }}>
+      <div className="flex-1 min-h-0 grid gap-2" style={{ gridTemplateColumns: '2fr 1fr', gridTemplateRows: '1fr', alignItems: 'stretch' }}>
 
-        {/* LEFT: Feeling chart */}
-        <div className="card-indigo">
+        {/* LEFT: Feeling chart + Cycle pattern */}
+        <div className="flex flex-col gap-2 min-h-0">
+        <div className="card-indigo flex-1 min-h-0 flex flex-col overflow-hidden">
           <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-1">Feeling Chart</div>
           <div className="font-body text-[11px] text-muted-purple mb-3">{range}d · mood / energy / regulation</div>
 
           {feelingData.length < 2 ? (
-            <div className="flex items-center justify-center font-body text-[13px] text-muted-purple" style={{ height: 200 }}>
+            <div className="flex-1 flex items-center justify-center font-body text-[13px] text-muted-purple">
               Log a few sessions to see your trend.
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
+            <div className="flex-1 min-h-0">
+            <ResponsiveContainer width="100%" height="100%">
               <LineChart data={feelingData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                 <CartesianGrid stroke="#7a6fa0" strokeOpacity={0.15} horizontal vertical={false} />
                 {lutealBands.map((b, i) => (
@@ -625,10 +637,11 @@ export function Dashboard() {
                 <Line type="monotone" dataKey="reg" name="Regulation" stroke="#c9b8f0" strokeWidth={1.5} dot={{ fill: '#c9b8f0', r: 2, strokeWidth: 0 }} activeDot={{ r: 5 }} strokeDasharray="2 3" />
               </LineChart>
             </ResponsiveContainer>
+            </div>
           )}
 
           {/* Legend */}
-          <div className="flex gap-4 mt-2">
+          <div className="flex gap-4 mt-1 flex-shrink-0">
             <LegendLine color="#ffe066" label="Mood" />
             <LegendLine color="#b5ead7" label="Energy" dashed />
             <LegendLine color="#c9b8f0" label="Regulation" dashed />
@@ -639,12 +652,16 @@ export function Dashboard() {
           <ZoneDotStrip range={range} sessions={inRange} cycles={cycles} cycleLen={cycleLen} />
         </div>
 
+        {/* Cycle pattern strip under feeling chart */}
+        <CyclePatternStrip cyclePos={phaseInfo.cyclePos} />
+        </div>
+
         {/* RIGHT: Correlation cards + Balance drift radar */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2 min-h-0">
 
           {/* Correlation cards 2×2 */}
-          <div className="card-indigo">
-            <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-3">What's driving it</div>
+          <div className="card-indigo flex-shrink-0">
+            <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-2">What's driving it</div>
             <div className="grid grid-cols-2 gap-2">
               <CorrelationCard emoji="💊" label="Medication" aLabel="Medicated" bLabel="Unmedicated" aAvg={avgArr(medReg)} bAvg={avgArr(noMedReg)} aCount={medReg.length} bCount={noMedReg.length} metric="vs. regulation" />
               <CorrelationCard emoji="🌙" label="Cycle phase" aLabel="Non-luteal" bLabel="Luteal" aAvg={avgArr(nonLutealMood)} bAvg={avgArr(lutealMood)} aCount={nonLutealMood.length} bCount={lutealMood.length} metric="vs. mood" />
@@ -654,14 +671,15 @@ export function Dashboard() {
           </div>
 
           {/* Balance drift radar */}
-          <div className="card-indigo">
-            <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-1">Balance Drift</div>
-            <div className="font-body text-[11px] text-muted-purple mb-2">Last {range}d vs prior {range}d</div>
+          <div className="card-indigo flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-1 flex-shrink-0">Balance Drift</div>
+            <div className="font-body text-[11px] text-muted-purple mb-1 flex-shrink-0">Last {range}d vs prior {range}d</div>
 
             {inRange.length === 0 ? (
-              <div className="font-body text-[12px] text-muted-purple py-4 text-center">Keep logging to see how your balance shifts.</div>
+              <div className="flex-1 flex items-center justify-center font-body text-[12px] text-muted-purple text-center">Keep logging to see how your balance shifts.</div>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
+              <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
                 <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="62%">
                   <PolarGrid stroke="#7a6fa0" strokeOpacity={0.25} />
                   <PolarAngleAxis dataKey="subject" tick={{ fontFamily: "'Press Start 2P'", fontSize: 6, fill: '#9b89c4' }} />
@@ -669,16 +687,17 @@ export function Dashboard() {
                   <Radar dataKey="current" stroke="#ffe066" fill="rgba(255,224,102,0.2)" strokeWidth={2} name={`Last ${range}d`} />
                 </RadarChart>
               </ResponsiveContainer>
+              </div>
             )}
 
-            <div className="flex gap-4 justify-center mt-1 mb-3">
+            <div className="flex gap-4 justify-center mt-1 mb-1 flex-shrink-0">
               <LegendLine color="#ffe066" label={`Last ${range}d`} />
               <LegendLine color="#9b89c4" label={`Prior ${range}d`} dashed />
             </div>
 
             {/* Drift table */}
             {hasMeaningfulDrift && (
-              <div className="flex flex-col gap-1" style={{ borderTop: '1px solid rgba(155,137,196,0.2)', paddingTop: 12 }}>
+              <div className="flex flex-col gap-1 flex-shrink-0" style={{ borderTop: '1px solid rgba(155,137,196,0.2)', paddingTop: 8 }}>
                 {positiveDrifts.map(d => (
                   <div key={d.short} className="flex justify-between items-center">
                     <span className="font-body text-[11px] text-muted-purple">{d.short}</span>
@@ -697,8 +716,6 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Full-width cycle pattern strip */}
-      <CyclePatternStrip cyclePos={phaseInfo.cyclePos} />
     </div>
   );
 }
