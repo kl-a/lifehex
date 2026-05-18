@@ -1,4 +1,4 @@
-# LifeHex
+# Selene
 
 A personal wellness tracker for the browser. Tracks daily mood, energy, life balance, menstrual cycle phases, and ADHD/PMDD symptom patterns — all in one full-viewport dashboard.
 
@@ -53,11 +53,11 @@ Everything is stored in your browser's `localStorage`. Nothing is sent to a serv
 
 | Key | Contents |
 |---|---|
-| `lifehex_sessions` | All mood session snapshots |
-| `lifehex_day` | Today's live daily record |
-| `lifehex_day_history` | Archived daily records (rolled over at midnight) |
-| `lifehex_cycles` | Cycle history |
-| `lifehex_settings` | Cycle length, period duration, routine times |
+| `selene_sessions` | All mood session snapshots |
+| `selene_day` | Today's live daily record |
+| `selene_day_history` | Archived daily records (rolled over at midnight) |
+| `selene_cycles` | Cycle history |
+| `selene_settings` | Cycle length, period duration, routine times |
 
 Use **Settings → Export data** to download a full JSON backup at any time.
 
@@ -81,4 +81,4 @@ npm run preview # preview the production build
 
 ## Layout
 
-LifeHex is a full-viewport desktop browser app — not a mobile app. The Today screen uses a 3-column grid that fills the entire browser window with no page-level scroll. Tablet (≥768px) is supported; mobile degrades gracefully.
+Selene is a full-viewport desktop browser app — not a mobile app. The Today screen uses a 3-column grid that fills the entire browser window with no page-level scroll. Tablet (≥768px) is supported; mobile degrades gracefully.

@@ -48,6 +48,6 @@ export const useDriveStore = create<DriveState>()(
           syncError: null,
         }),
     }),
-    { name: 'lifehex_drive' }
+    { name: 'selene_drive' }
   )
 );

@@ -576,7 +576,7 @@ function SettingsPage({ onBack }: { onBack: () => void }) {
 
         <div style={{ background: '#16213e', border: '2px solid rgba(155,137,196,0.2)', borderRadius: 4, padding: '12px 16px' }}>
           <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#7a6fa0', lineHeight: 1.5 }}>
-            To change routine times, cycle length, or other settings, use the desktop app at <Link to="/" style={{ color: '#9b89c4' }}>lifehex desktop →</Link>
+            To change routine times, cycle length, or other settings, use the desktop app at <Link to="/" style={{ color: '#9b89c4' }}>Selene desktop →</Link>
           </p>
         </div>
       </div>
@@ -648,10 +648,10 @@ export function MobileApp() {
 
       {/* ── Header bar ── */}
       <div style={{ padding: '10px 16px', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 8, borderBottom: '1px solid rgba(155,137,196,0.12)' }}>
-        {/* Left: ⚡ LifeHex */}
+        {/* Left: ⚡ Selene */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 16 }}>⚡</span>
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#fdfcff', letterSpacing: '0.03em' }}>LifeHex</span>
+          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#fdfcff', letterSpacing: '0.03em' }}>Selene</span>
         </div>
 
         {/* Centre: lock toggle */}

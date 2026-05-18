@@ -56,7 +56,7 @@ export function exportJSON(
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `lifehex-${isoDate(new Date())}.json`;
+  a.download = `selene-${isoDate(new Date())}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

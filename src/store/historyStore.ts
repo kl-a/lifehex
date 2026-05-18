@@ -28,6 +28,6 @@ export const useHistoryStore = create<HistoryStore>()(
       clearSessions: () => set({ sessions: [] }),
       importSessions: (sessions) => set({ sessions }),
     }),
-    { name: 'lifehex_sessions' }
+    { name: 'selene_sessions' }
   )
 );

@@ -1,8 +1,8 @@
 // localStorage persistence helpers
 
-const LS_SESSIONS = 'lifehex_sessions';
-const LS_CYCLES   = 'lifehex_cycles';
-const LS_SETTINGS = 'lifehex_settings';
+const LS_SESSIONS = 'selene_sessions';
+const LS_CYCLES   = 'selene_cycles';
+const LS_SETTINGS = 'selene_settings';
 
 const DEFAULT_SETTINGS = { cycleLen: 28, periodLen: 5, driveConnected: false, lastSyncedAt: null };
 
@@ -29,7 +29,7 @@ function exportData(sessions, cycles, settings) {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = `lifehex-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `selene-${new Date().toISOString().slice(0, 10)}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

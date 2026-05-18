@@ -26,6 +26,6 @@ export const useDayHistoryStore = create<DayHistoryStore>()(
 
       clearDayRecords: () => set({ dayRecords: [] }),
     }),
-    { name: 'lifehex_day_history' }
+    { name: 'selene_day_history' }
   )
 );

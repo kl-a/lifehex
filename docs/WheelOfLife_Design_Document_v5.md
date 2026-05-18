@@ -1,11 +1,11 @@
-# LifeHex — Wellness & Life Balance Tracker
+# Selene — Wellness & Life Balance Tracker
 ## Design Document v3.0
 
 ---
 
 ## Overview
 
-LifeHex is a personal browser-based web app (served via GitHub Pages) for tracking daily emotional wellbeing, life balance across eight dimensions, menstrual cycle phases, and ADHD/PMDD symptom patterns. It is designed exclusively for personal use and follows the same cosy pixel-DS aesthetic as Jar of Stars.
+Selene is a personal browser-based web app (served via GitHub Pages) for tracking daily emotional wellbeing, life balance across eight dimensions, menstrual cycle phases, and ADHD/PMDD symptom patterns. It is designed exclusively for personal use and follows the same cosy pixel-DS aesthetic as Jar of Stars.
 
 The app sits at the intersection of a mood journal, a wheel-of-life tracker, a cycle tracker, and a gentle daily structure tool. Its two distinguishing features are:
 
@@ -31,13 +31,13 @@ The app is browser-only in v1. Time-triggered routine prompts appear as in-app b
 | Deployment | GitHub Pages via GitHub Actions | Same pipeline as Jar of Stars |
 | Auth | Google OAuth (same as Jar of Stars) | Drive sync only |
 
-> ⚠️ **Claude Code note:** Always create an isolated project directory before installing dependencies. Do **not** install packages globally. Use `npm create vite@latest lifehex -- --template react-ts` to scaffold, then `cd lifehex && npm install` inside the project directory. Never run global npm installs.
+> ⚠️ **Claude Code note:** Always create an isolated project directory before installing dependencies. Do **not** install packages globally. Use `npm create vite@latest selene -- --template react-ts` to scaffold, then `cd selene && npm install` inside the project directory. Never run global npm installs.
 
 ---
 
 ## Browser Layout — IMPORTANT
 
-LifeHex is a **full-browser desktop web app**, not a mobile app and not a centred narrow column. Do **not** constrain the page to 390px or 480px width. Do **not** centre a narrow card in the middle of the screen with Night Sky gutters. The app fills the full browser viewport.
+Selene is a **full-browser desktop web app**, not a mobile app and not a centred narrow column. Do **not** constrain the page to 390px or 480px width. Do **not** centre a narrow card in the middle of the screen with Night Sky gutters. The app fills the full browser viewport.
 
 This has been a recurring issue when the app is rebuilt from scratch — previous attempts rendered it as a phone-sized column centred on the page. That is **wrong**. Every screen should fill the full available width and height.
 
@@ -160,7 +160,7 @@ The radar chart tracks eight life dimensions. These are fixed and personal — n
 
 ## Core Concept: The Lock/Unlock Session
 
-The central interaction paradigm of LifeHex is the **session lock**. Rather than forcing one entry per day, the app captures point-in-time snapshots of your state.
+The central interaction paradigm of Selene is the **session lock**. Rather than forcing one entry per day, the app captures point-in-time snapshots of your state.
 
 ### How it works
 
@@ -1425,11 +1425,11 @@ All data is stored in browser localStorage via Zustand's `persist` middleware. N
 
 | Key | Store | Contents | Resets? |
 |---|---|---|---|
-| `lifehex_sessions` | `historyStore.ts` | All locked session snapshots (mood, energy, regulation, dimensions, zone, timestamp) | Never — accumulates indefinitely |
-| `lifehex_day` | `dayStore.ts` | Today's DayRecord — checklist state, meals, symptoms, sleep, "that wasn't me" | Midnight — archived first, then reset |
-| `lifehex_day_history` | `dayHistoryStore.ts` | All past DayRecords, sorted descending by date | Never — accumulates indefinitely |
-| `lifehex_cycles` | `cycleStore.ts` | Period cycle entries (start date, end date, length) | Never |
-| `lifehex_settings` | `settingsStore.ts` | Cycle lengths, routine times, medication toggle, Drive connection state | Never |
+| `selene_sessions` | `historyStore.ts` | All locked session snapshots (mood, energy, regulation, dimensions, zone, timestamp) | Never — accumulates indefinitely |
+| `selene_day` | `dayStore.ts` | Today's DayRecord — checklist state, meals, symptoms, sleep, "that wasn't me" | Midnight — archived first, then reset |
+| `selene_day_history` | `dayHistoryStore.ts` | All past DayRecords, sorted descending by date | Never — accumulates indefinitely |
+| `selene_cycles` | `cycleStore.ts` | Period cycle entries (start date, end date, length) | Never |
+| `selene_settings` | `settingsStore.ts` | Cycle lengths, routine times, medication toggle, Drive connection state | Never |
 
 ### Day archiving
 
@@ -1439,7 +1439,7 @@ All data is stored in browser localStorage via Zustand's `persist` middleware. N
 2. `archiveDay` deduplicates by date (last-write-wins) — safe to call multiple times
 3. A fresh `defaultDayRecord(today)` replaces the current record
 
-This means checklist data is **never lost** — past days accumulate in `lifehex_day_history`.
+This means checklist data is **never lost** — past days accumulate in `selene_day_history`.
 
 ### Export format (version 2)
 
@@ -1462,7 +1462,7 @@ Settings → Download JSON produces a file ready for Google Drive migration:
 
 ## Google Drive Sync
 
-**Sync file:** `lifehex-data.json` in Google Drive app folder
+**Sync file:** `selene-data.json` in Google Drive app folder
 
 ```json
 {
@@ -1521,9 +1521,9 @@ function _merge<T extends { id: string; updated_at?: string; created_at?: string
 
 ```
 1. App starts
-2. Check localStorage for 'lifehexConnected' === 'true'
+2. Check localStorage for 'seleneConnected' === 'true'
 3. If true → attempt silent token refresh (no popup, no user interaction)
-4. If refresh succeeds → fetch lifehex-data.json from Drive
+4. If refresh succeeds → fetch selene-data.json from Drive
 5. CRITICAL: if Drive file is empty, missing, or has zero items in all
    collections → DO NOT overwrite local data. Treat as "Drive is new/empty"
    and skip to step 7 with local data only.
@@ -1587,12 +1587,12 @@ After any lock event, checklist update, cycle log, or settings change, a debounc
 ```typescript
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
-function scheduleSave(state: LifeHexState) {
+function scheduleSave(state: SeleneState) {
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     const payload = buildDrivePayload(state);
     await patchDriveFile(payload);   // HTTP PATCH to Drive file
-    localStorage.setItem('lifehex_last_synced', new Date().toISOString());
+    localStorage.setItem('selene_last_synced', new Date().toISOString());
   }, 3000); // 3-second debounce — rapid changes batch into one write
 }
 ```
@@ -1618,12 +1618,12 @@ Rapid edits (e.g. dragging a slider multiple times before locking) batch into a 
 ### localStorage key reference
 
 ```
-lifehex_sessions        → Session[]
-lifehex_day_records     → DayRecord[]
-lifehex_cycles          → CycleEntry[]
-lifehex_settings        → Settings
-lifehexConnected        → 'true' | 'false'  (Drive connection state)
-lifehex_last_synced     → ISO timestamp of last successful Drive write
+selene_sessions        → Session[]
+selene_day_records     → DayRecord[]
+selene_cycles          → CycleEntry[]
+selene_settings        → Settings
+seleneConnected        → 'true' | 'false'  (Drive connection state)
+selene_last_synced     → ISO timestamp of last successful Drive write
 ```
 
 ---
@@ -1676,10 +1676,10 @@ lifehex_last_synced     → ISO timestamp of last successful Drive write
 
 ```bash
 # Scaffold (run once, inside your chosen parent directory)
-npm create vite@latest lifehex -- --template react-ts
-cd lifehex
+npm create vite@latest selene -- --template react-ts
+cd selene
 
-# All installs run from inside lifehex/
+# All installs run from inside selene/
 npm install
 npm install zustand framer-motion recharts
 npm install uuid date-fns
@@ -1697,7 +1697,7 @@ cp .env.example .env
 npm run dev
 ```
 
-> ⚠️ **Claude Code note:** All `npm install` commands must run from inside `lifehex/`. No global installs. No `sudo npm install`. `date-fns` is required for `cyclePredictor.ts` date arithmetic (`addDays`, `subDays`, `isWithinInterval`).
+> ⚠️ **Claude Code note:** All `npm install` commands must run from inside `selene/`. No global installs. No `sudo npm install`. `date-fns` is required for `cyclePredictor.ts` date arithmetic (`addDays`, `subDays`, `isWithinInterval`).
 
 ---
 
@@ -1728,7 +1728,7 @@ jobs:
 ```typescript
 // vite.config.ts
 export default defineConfig({
-  base: '/lifehex/', // update to match actual repo name
+  base: '/selene/', // update to match actual repo name
   plugins: [react()],
 })
 ```

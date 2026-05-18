@@ -41,6 +41,6 @@ export const useCycleStore = create<CycleStore>()(
         set((state) => ({ cycles: sortDesc([...state.cycles, entry]) })),
       importCycles: (cycles) => set({ cycles }),
     }),
-    { name: 'lifehex_cycles' }
+    { name: 'selene_cycles' }
   )
 );

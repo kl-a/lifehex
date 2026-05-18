@@ -1,13 +1,13 @@
-# LifeHex Mobile — Lightweight Input Companion
+# Selene Mobile — Lightweight Input Companion
 ## Design Document v1.0
 
 ---
 
 ## Overview
 
-LifeHex Mobile is a **browser-based mobile companion** to the LifeHex desktop app. It is input-only by design — its sole job is to let you log your state quickly while you're away from your desk, then get out of your way.
+Selene Mobile is a **browser-based mobile companion** to the Selene desktop app. It is input-only by design — its sole job is to let you log your state quickly while you're away from your desk, then get out of your way.
 
-It reads from and writes to the **exact same Google Drive JSON files** as the desktop app (`lifehex-data.json`). No separate data model. No separate sync. Whatever you log on mobile appears on desktop the next time desktop loads, via the same last-write-wins merge strategy.
+It reads from and writes to the **exact same Google Drive JSON files** as the desktop app (`selene-data.json`). No separate data model. No separate sync. Whatever you log on mobile appears on desktop the next time desktop loads, via the same last-write-wins merge strategy.
 
 **Design philosophy:** One screen. No navigation. No charts. Open, adjust, lock, close. The whole interaction should take under 20 seconds.
 
@@ -24,7 +24,7 @@ Identical to the desktop app — same repo, separate route or subdomain.
 | State | Zustand (shared stores with desktop where possible) |
 | Sync | Google Drive API — same `driveSync.ts` utility, same file |
 | Fonts | Press Start 2P + Nunito (same as desktop) |
-| Deployment | Same GitHub Pages repo, served at `/mobile` path or `m.lifehex` subdomain |
+| Deployment | Same GitHub Pages repo, served at `/mobile` path or `m.selene` subdomain |
 
 > ⚠️ **Claude Code note:** The mobile app should live in the same Vite project as the desktop app. Route it via React Router: `<Route path="/mobile" element={<MobileApp />} />`. Do not create a separate repository. All shared utilities (`driveSync.ts`, `regulationScore.ts`, `cyclePredictor.ts`, `types/index.ts`) are imported directly — no duplication.
 
@@ -320,7 +320,7 @@ Total interaction time for a quick check-in: **~15 seconds**.
 
 ## Google Drive Sync
 
-Identical to desktop. Same file (`lifehex-data.json`), same merge function, same `driveSync.ts`.
+Identical to desktop. Same file (`selene-data.json`), same merge function, same `driveSync.ts`.
 
 On mobile, sync is triggered:
 - On app load (silent token refresh, no popup)

@@ -1,4 +1,4 @@
-# Claude Code Prompt — LifeHex Mobile UI Fix
+# Claude Code Prompt — Selene Mobile UI Fix
 
 The mobile companion app has been scaffolded but has significant visual and layout issues compared to the design document. Please fix all of the following. Do not change any data logic, sync logic, or state management — only fix the visual presentation and layout.
 

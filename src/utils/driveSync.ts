@@ -39,7 +39,7 @@ declare global {
 
 const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
 const SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
-const FILE_NAME = 'lifehex-data.json';
+const FILE_NAME = 'selene-data.json';
 const DRIVE_BASE = 'https://www.googleapis.com/drive/v3';
 const UPLOAD_BASE = 'https://www.googleapis.com/upload/drive/v3';
 
@@ -171,7 +171,7 @@ async function readFileContent(fileId: string): Promise<string> {
 }
 
 async function createDriveFile(content: string): Promise<string> {
-  const boundary = 'lifehex_' + Math.random().toString(36).slice(2);
+  const boundary = 'selene_' + Math.random().toString(36).slice(2);
   const metadata = JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] });
   const body = [
     `--${boundary}`,

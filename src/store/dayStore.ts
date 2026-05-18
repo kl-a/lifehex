@@ -197,6 +197,6 @@ export const useDayStore = create<DayStore>()(
       setThatWasntMeNote: (note) =>
         set((s) => ({ dayRecord: { ...s.dayRecord, thatWasntMeNote: note, updated_at: new Date().toISOString() } })),
     }),
-    { name: 'lifehex_day' }
+    { name: 'selene_day' }
   )
 );

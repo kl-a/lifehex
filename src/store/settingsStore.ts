@@ -38,6 +38,6 @@ export const useSettingsStore = create<SettingsStore>()(
       setBedtimeRoutineTime: (t) => set({ bedtimeRoutineTime: t, ...touch() }),
       setWeekdayMedicationTracking: (v) => set({ weekdayMedicationTracking: v, ...touch() }),
     }),
-    { name: 'lifehex_settings' }
+    { name: 'selene_settings' }
   )
 );

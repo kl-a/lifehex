@@ -1,4 +1,4 @@
-// LifeHex seed data + static definitions
+// Selene seed data + static definitions
 
 const DIMENSIONS = [
   {
