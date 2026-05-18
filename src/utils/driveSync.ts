@@ -52,6 +52,7 @@ interface SyncSettings {
   lunchNudgeTime: string;
   bedtimeRoutineTime: string;
   weekdayMedicationTracking: boolean;
+  updated_at?: string;
 }
 
 interface SyncPayload {
@@ -271,15 +272,6 @@ function mergeByDate<T extends { date: string; updated_at?: string; created_at?:
     if (!existing || localTs > remoteTs) map.set(item.date, item);
   }
   return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
-}
-
-function isDriveFileEmpty(payload: SyncPayload | null): boolean {
-  if (!payload) return true;
-  return (
-    (payload.sessions?.length ?? 0) +
-    (payload.dayHistory?.length ?? 0) +
-    (payload.cycles?.length ?? 0) === 0
-  );
 }
 
 function applyPayload(remote: SyncPayload): void {
