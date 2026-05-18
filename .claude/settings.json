@@ -38,7 +38,11 @@
       "Bash(git stash *)",
       "Bash(git commit -m 'Add project README *)",
       "Bash(git remote *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(find /Users/kellytsang -maxdepth 4 -name \"*v4*\" -o -name \"*LifeHex*\" -o -name \"*lifehex*\" 2>/dev/null | grep -v node_modules | grep -v \".git\")",
+      "Read(//Users/kellytsang/**)",
+      "Bash(xargs ls)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5176/lifehex/)"
     ],
     "additionalDirectories": [
       "/private/tmp"
