@@ -197,7 +197,7 @@ function StateTimeline({ sessions }: { sessions: Session[] }) {
 }
 
 export function Today({ phaseInfo, periodLen, goCycle }: Props) {
-  const { locked, dimensions, mood, energy, regulation, lastSavedISO, unlock, lock, setDimension, setMood, setEnergy, setRegulation } = useSessionStore();
+  const { locked, dimensions, mood, energy, regulation, lastSavedISO, note, unlock, lock, setDimension, setMood, setEnergy, setRegulation, setNote } = useSessionStore();
   const { sessions, addSession, removeSession } = useHistoryStore();
   const { dayRecord } = useDayStore();
   const [activeDimKey, setActiveDimKey] = useState<keyof DimensionScores | null>(null);
@@ -277,6 +277,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
           systemSuggested: systemZone, userConfirmed: confirmedZone,
           inputsSnapshot: { mood, energy, regulation, isLutealPhase: phaseInfo.phase === 'luteal', medicationTaken: dayRecord.medicationTaken, isWeekday, symptomCount: dayRecord.symptoms.length, thatWasntMeToday: dayRecord.thatWasntMe, sleepQuality: dayRecord.sleepQuality, mealsLogged, gymToday: dayRecord.gymToday },
         } : null,
+        note: note.trim() || undefined,
         created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
       };
       addSession(newSession);
@@ -396,7 +397,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
             <span className="text-[11px] font-bold uppercase tracking-widest text-star-gold">State</span>
             {locked && <p className="text-[9px] text-muted-purple/60 mt-0.5">Unlock to adjust</p>}
           </div>
-          <div className="flex-1 overflow-hidden flex gap-3 justify-around">
+          <div className="flex-1 overflow-hidden flex gap-3 justify-around min-h-0">
             <MoodSlider
               label="Mood"
               value={displayMood}
@@ -425,6 +426,20 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               tooltip="Emotional regulation — how grounded and in control you feel, from dysregulated (1) to centered (10)."
             />
           </div>
+          {/* Session note */}
+          {!locked && (
+            <div className="flex-shrink-0 mt-2 pt-2 border-t border-muted-purple/20">
+              <div className="text-[9px] font-bold uppercase tracking-widest text-muted-purple mb-1">Session note</div>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Optional note for this session…"
+                rows={2}
+                className="w-full bg-night-sky border border-muted-purple/20 rounded px-2 py-1.5 font-body text-[12px] text-cloud-white placeholder:text-muted-purple/30 outline-none focus:border-muted-purple/50 resize-none"
+                style={{ scrollbarWidth: 'thin' }}
+              />
+            </div>
+          )}
         </div>
 
         {/* RIGHT: Checklist + sessions + symptoms */}
@@ -444,7 +459,8 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
                   const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[s.confirmedZone];
                   const zLabel = { green: 'GREEN', amber: 'AMBER', red: 'RED' }[s.confirmedZone];
                   return (
-                    <div key={s.id} className="flex items-center gap-2 px-3 py-2 rounded border border-muted-purple/20" style={{ background: 'rgba(155,137,196,0.08)' }}>
+                    <div key={s.id} className="flex flex-col gap-0.5 px-3 py-2 rounded border border-muted-purple/20" style={{ background: 'rgba(155,137,196,0.08)' }}>
+                      <div className="flex items-center gap-2">
                       <span className="font-body font-bold text-[13px] text-cloud-white flex-shrink-0 w-20">{t}</span>
                       <span className="font-body font-bold text-[12px] flex-shrink-0" style={{ color: '#ffe066' }}>{MOOD_EMOJI(s.mood)} {s.mood}</span>
                       <span className="font-body font-bold text-[12px] flex-shrink-0" style={{ color: '#b5ead7' }}>⚡ {s.energy}</span>
@@ -459,6 +475,10 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
                         className="text-muted-purple/40 hover:text-blush-pink transition-colors text-sm flex-shrink-0"
                         title="Delete"
                       >×</button>
+                      </div>
+                      {s.note && (
+                        <p className="font-body text-[11px] italic pl-20" style={{ color: 'rgba(155,137,196,0.7)' }}>{s.note}</p>
+                      )}
                     </div>
                   );
                 })}

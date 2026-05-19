@@ -9,12 +9,14 @@ interface SessionStore {
   energy: number;
   regulation: number;
   lastSavedISO: string | null;
+  note: string;
   unlock: (prefillDimensions: DimensionScores, prefillMood: number, prefillEnergy: number, prefillRegulation: number) => void;
   lock: () => void;
   setDimension: (key: keyof DimensionScores, value: number) => void;
   setMood: (v: number) => void;
   setEnergy: (v: number) => void;
   setRegulation: (v: number) => void;
+  setNote: (note: string) => void;
 }
 
 export const useSessionStore = create<SessionStore>()((set) => ({
@@ -24,6 +26,7 @@ export const useSessionStore = create<SessionStore>()((set) => ({
   energy: 5,
   regulation: 5,
   lastSavedISO: null,
+  note: '',
 
   unlock: (prefillDimensions, prefillMood, prefillEnergy, prefillRegulation) =>
     set({
@@ -32,9 +35,10 @@ export const useSessionStore = create<SessionStore>()((set) => ({
       mood: prefillMood,
       energy: prefillEnergy,
       regulation: prefillRegulation,
+      note: '',
     }),
 
-  lock: () => set({ locked: true }),
+  lock: () => set({ locked: true, note: '' }),
 
   setDimension: (key, value) =>
     set((state) => ({ dimensions: { ...state.dimensions, [key]: value } })),
@@ -42,4 +46,5 @@ export const useSessionStore = create<SessionStore>()((set) => ({
   setMood: (v) => set({ mood: v }),
   setEnergy: (v) => set({ energy: v }),
   setRegulation: (v) => set({ regulation: v }),
+  setNote: (note) => set({ note }),
 }));

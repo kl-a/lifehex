@@ -282,13 +282,75 @@ function CheckRow({ checked, label, timeIso, onTimeChange, onChange, disabled, d
   );
 }
 
+// ── MedDoseRow ────────────────────────────────────────────────────────────────
+
+function MedDoseRow({ label, checked, timeIso, disabled, onToggle, onTimeChange }: {
+  label: string; checked: boolean; timeIso: string | null;
+  disabled: boolean; onToggle: () => void; onTimeChange: (iso: string) => void;
+}) {
+  const [editingTime, setEditingTime] = useState(false);
+  return (
+    <div
+      className="flex-1 flex flex-col gap-1 px-2 py-1.5 rounded"
+      style={{
+        background: checked ? 'rgba(181,234,215,0.1)' : 'rgba(155,137,196,0.06)',
+        border: `1px solid ${checked ? 'rgba(106,171,144,0.4)' : 'rgba(155,137,196,0.2)'}`,
+        opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => !disabled && onToggle()}
+          disabled={disabled}
+          className="flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-all"
+          style={{
+            borderColor: checked ? '#6aab90' : '#9b89c4',
+            background: checked ? '#b5ead7' : 'transparent',
+          }}
+        >
+          {checked && (
+            <svg width="8" height="6" viewBox="0 0 10 8" fill="none">
+              <path d="M1 4l3 3 5-6" stroke="#16213e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </button>
+        <span className="font-body text-[12px]" style={{ color: checked ? '#fdfcff' : '#9b89c4' }}>{label}</span>
+      </div>
+      {checked && (
+        <div className="ml-6 flex items-center gap-1">
+          {editingTime ? (
+            <input
+              type="time"
+              defaultValue={timeIso ? isoToHHMM(timeIso) : ''}
+              autoFocus
+              className="bg-night-sky border border-muted-purple/30 rounded px-1 font-body text-[10px] text-mint-green outline-none"
+              style={{ width: 70 }}
+              onBlur={(e) => { if (e.target.value) onTimeChange(hhmmToISO(e.target.value)); setEditingTime(false); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { onTimeChange(hhmmToISO((e.target as HTMLInputElement).value)); setEditingTime(false); }
+                if (e.key === 'Escape') setEditingTime(false);
+              }}
+            />
+          ) : (
+            <>
+              <span className="font-body text-[10px] text-mint-green/70">✓ {fmtTime(timeIso)}</span>
+              <button onClick={() => setEditingTime(true)} className="text-muted-purple/35 hover:text-muted-purple text-[10px]" title="Edit time">✏</button>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── DailyChecklist ────────────────────────────────────────────────────────────
 
 export function DailyChecklist({ isLuteal = false }: { isLuteal?: boolean }) {
   const [openRoutine, setOpenRoutine] = useState<RoutineType | null>(null);
   const {
     dayRecord,
-    setMedicationTaken, setMedicationTime,
+    setMedicationMorningTaken, setMedicationMorningTime,
+    setMedicationArvoTaken, setMedicationArvoTime,
     updateMeal, setMealTime,
     setLunchBreakTaken,
     setGymToday, setGymTime,
@@ -353,16 +415,35 @@ export function DailyChecklist({ isLuteal = false }: { isLuteal?: boolean }) {
       </AnimatePresence>
 
       <div className="divide-y divide-muted-purple/10">
-        {/* Medication */}
-        <CheckRow
-          checked={dayRecord.medicationTaken}
-          label="Medication taken"
-          timeIso={dayRecord.medicationTime}
-          onTimeChange={setMedicationTime}
-          onChange={setMedicationTaken}
-          disabled={!weekday}
-          disabledLabel="rest day"
-        />
+        {/* Medication — morning + arvo side by side */}
+        <div className="py-1">
+          <div className="flex items-center gap-1 mb-1">
+            <span className="font-body text-[12px]" style={{ color: (!weekday) ? 'rgba(155,137,196,0.4)' : '#9b89c4' }}>
+              Medication
+            </span>
+            {!weekday && <span className="font-bold text-[9px] text-muted-purple/50 uppercase tracking-widest ml-1">rest day</span>}
+          </div>
+          <div className="flex gap-2">
+            {/* Morning */}
+            <MedDoseRow
+              label="Morning"
+              checked={dayRecord.medicationMorningTaken}
+              timeIso={dayRecord.medicationMorningTime}
+              disabled={!weekday}
+              onToggle={() => setMedicationMorningTaken(!dayRecord.medicationMorningTaken)}
+              onTimeChange={setMedicationMorningTime}
+            />
+            {/* Arvo */}
+            <MedDoseRow
+              label="Arvo"
+              checked={dayRecord.medicationArvoTaken}
+              timeIso={dayRecord.medicationArvoTime}
+              disabled={!weekday}
+              onToggle={() => setMedicationArvoTaken(!dayRecord.medicationArvoTaken)}
+              onTimeChange={setMedicationArvoTime}
+            />
+          </div>
+        </div>
 
         {/* Meals */}
         {dayRecord.meals.map((meal) => (

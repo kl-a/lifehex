@@ -41,6 +41,7 @@ export interface Session {
   systemZone: 'green' | 'amber' | 'red';
   confirmedZone: 'green' | 'amber' | 'red';
   zoneOverride: ZoneOverride | null;
+  note?: string;
   created_at: string;
   updated_at: string;
 }
@@ -58,6 +59,10 @@ export interface DayRecord {
   date: string;
   medicationTaken: boolean;
   medicationTime: string | null;
+  medicationMorningTaken: boolean;
+  medicationMorningTime: string | null;
+  medicationArvoTaken: boolean;
+  medicationArvoTime: string | null;
   meals: MealLog[];
   lunchBreakTaken: boolean;
   lunchBreakTime: string | null;

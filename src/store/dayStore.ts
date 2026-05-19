@@ -23,6 +23,10 @@ function defaultDayRecord(date: string): DayRecord {
     date,
     medicationTaken: false,
     medicationTime: null,
+    medicationMorningTaken: false,
+    medicationMorningTime: null,
+    medicationArvoTaken: false,
+    medicationArvoTime: null,
     meals: defaultMeals(),
     lunchBreakTaken: false,
     lunchBreakTime: null,
@@ -50,6 +54,10 @@ interface DayStore {
   ensureToday: () => void;
   setMedicationTaken: (taken: boolean) => void;
   setMedicationTime: (iso: string) => void;
+  setMedicationMorningTaken: (taken: boolean) => void;
+  setMedicationMorningTime: (iso: string) => void;
+  setMedicationArvoTaken: (taken: boolean) => void;
+  setMedicationArvoTime: (iso: string) => void;
   updateMeal: (meal: 'breakfast' | 'lunch' | 'dinner', patch: Partial<MealLog>) => void;
   setMealTime: (meal: 'breakfast' | 'lunch' | 'dinner', iso: string) => void;
   setLunchBreakTaken: (taken: boolean) => void;
@@ -95,6 +103,38 @@ export const useDayStore = create<DayStore>()(
       setMedicationTime: (iso) =>
         set((s) => ({
           dayRecord: { ...s.dayRecord, medicationTime: iso, updated_at: new Date().toISOString() },
+        })),
+
+      setMedicationMorningTaken: (taken) =>
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            medicationMorningTaken: taken,
+            medicationMorningTime: taken ? new Date().toISOString() : null,
+            medicationTaken: taken || s.dayRecord.medicationArvoTaken,
+            updated_at: new Date().toISOString(),
+          },
+        })),
+
+      setMedicationMorningTime: (iso) =>
+        set((s) => ({
+          dayRecord: { ...s.dayRecord, medicationMorningTime: iso, updated_at: new Date().toISOString() },
+        })),
+
+      setMedicationArvoTaken: (taken) =>
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            medicationArvoTaken: taken,
+            medicationArvoTime: taken ? new Date().toISOString() : null,
+            medicationTaken: s.dayRecord.medicationMorningTaken || taken,
+            updated_at: new Date().toISOString(),
+          },
+        })),
+
+      setMedicationArvoTime: (iso) =>
+        set((s) => ({
+          dayRecord: { ...s.dayRecord, medicationArvoTime: iso, updated_at: new Date().toISOString() },
         })),
 
       updateMeal: (meal, patch) =>

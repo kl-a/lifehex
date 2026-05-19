@@ -199,13 +199,14 @@ function StatusBar({ phaseInfo, periodLen, hasCycle, zone, zoneReasons, onZoneTa
 // ─── checklist grid ───────────────────────────────────────────────────────────
 
 type ClockTarget =
-  | { kind: 'medication' }
+  | { kind: 'medicationMorning' }
+  | { kind: 'medicationArvo' }
   | { kind: 'meal'; id: 'breakfast' | 'lunch' | 'dinner' }
   | { kind: 'gym' }
   | { kind: 'alone' };
 
 function ChecklistGrid() {
-  const { dayRecord, setMedicationTaken, setMedicationTime, updateMeal, setMealTime, setGymToday, setGymTime, setAloneTimeToday, setAloneTimeStart } = useDayStore();
+  const { dayRecord, setMedicationMorningTaken, setMedicationMorningTime, setMedicationArvoTaken, setMedicationArvoTime, updateMeal, setMealTime, setGymToday, setGymTime, setAloneTimeToday, setAloneTimeStart } = useDayStore();
   const [clockTarget, setClockTarget] = useState<ClockTarget | null>(null);
   const [timeInput, setTimeInput] = useState('');
   const isWeekday = new Date().getDay() >= 1 && new Date().getDay() <= 5;
@@ -223,7 +224,8 @@ function ChecklistGrid() {
     const [h, m] = timeInput.split(':').map(Number);
     const d = new Date(); d.setHours(h, m, 0, 0);
     const iso = d.toISOString();
-    if (clockTarget.kind === 'medication') setMedicationTime(iso);
+    if (clockTarget.kind === 'medicationMorning') setMedicationMorningTime(iso);
+    else if (clockTarget.kind === 'medicationArvo') setMedicationArvoTime(iso);
     else if (clockTarget.kind === 'meal') setMealTime(clockTarget.id, iso);
     else if (clockTarget.kind === 'gym') setGymTime(iso);
     else setAloneTimeStart(iso);
@@ -268,9 +270,9 @@ function ChecklistGrid() {
   return (
     <>
       <div style={{ padding: '12px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        {/* Medication */}
+        {/* Medication — morning + arvo */}
         {!isWeekday ? (
-          <div style={{ ...cellStyle(false), opacity: 0.4, cursor: 'default', pointerEvents: 'none' }}>
+          <div style={{ ...cellStyle(false), opacity: 0.4, cursor: 'default', pointerEvents: 'none', gridColumn: 'span 2' }}>
             <span style={{ fontSize: 20 }}>💊</span>
             <div>
               <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#9b89c4' }}>Medication</div>
@@ -278,8 +280,12 @@ function ChecklistGrid() {
             </div>
           </div>
         ) : (
-          <Cell emoji="💊" label="Medication" checked={dayRecord.medicationTaken} iso={dayRecord.medicationTime}
-            onToggle={() => setMedicationTaken(!dayRecord.medicationTaken)} clockT={{ kind: 'medication' }} />
+          <>
+            <Cell emoji="💊" label="Morning" checked={dayRecord.medicationMorningTaken} iso={dayRecord.medicationMorningTime}
+              onToggle={() => setMedicationMorningTaken(!dayRecord.medicationMorningTaken)} clockT={{ kind: 'medicationMorning' }} />
+            <Cell emoji="💊" label="Arvo" checked={dayRecord.medicationArvoTaken} iso={dayRecord.medicationArvoTime}
+              onToggle={() => setMedicationArvoTaken(!dayRecord.medicationArvoTaken)} clockT={{ kind: 'medicationArvo' }} />
+          </>
         )}
 
         <Cell emoji="🍳" label="Breakfast" checked={meal('breakfast').logged} iso={meal('breakfast').loggedTime}
@@ -587,7 +593,7 @@ function SettingsPage({ onBack }: { onBack: () => void }) {
 // ─── main mobile app ──────────────────────────────────────────────────────────
 
 export function MobileApp() {
-  const { locked, dimensions, mood, energy, regulation, lastSavedISO, unlock, lock, setDimension, setMood, setEnergy, setRegulation } = useSessionStore();
+  const { locked, dimensions, mood, energy, regulation, lastSavedISO, note, unlock, lock, setDimension, setMood, setEnergy, setRegulation, setNote } = useSessionStore();
   const { sessions, addSession } = useHistoryStore();
   const { dayRecord } = useDayStore();
   const { cycles } = useCycleStore();
@@ -632,6 +638,7 @@ export function MobileApp() {
         dimensions: { ...dimensions }, mood, energy, emotionalRegulation: regulation,
         systemZone, confirmedZone,
         zoneOverride: confirmedZone !== systemZone ? { sessionId: '', date: isoDate(now), systemSuggested: systemZone, userConfirmed: confirmedZone, inputsSnapshot: zoneInputs } : null,
+        note: note.trim() || undefined,
         created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
       };
       addSession(newSession);
@@ -689,6 +696,19 @@ export function MobileApp() {
         <div style={{ height: 1, background: 'rgba(155,137,196,0.1)', margin: '0 16px' }} />
         <CompactSlider label="Reg" value={displayRegulation} onChange={setRegulation} disabled={locked} emojiForValue={REGULATION_EMOJI} color="#c9b8f0" />
       </div>
+
+      {/* ── Session note (only when unlocked) ── */}
+      {!locked && (
+        <div style={{ margin: '0 16px' }}>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Session note (optional)…"
+            rows={2}
+            style={{ width: '100%', background: '#16213e', border: '1px solid rgba(155,137,196,0.3)', borderRadius: 4, padding: '8px 12px', color: '#fdfcff', fontFamily: 'Nunito, sans-serif', fontSize: 13, resize: 'none', outline: 'none', boxSizing: 'border-box' }}
+          />
+        </div>
+      )}
 
       {/* ── Checklist ── */}
       <div style={{ margin: '0 0' }}>
