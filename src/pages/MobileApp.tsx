@@ -612,7 +612,10 @@ export function MobileApp() {
 
   const isWeekday = now.getDay() >= 1 && now.getDay() <= 5;
   const mealsLogged = dayRecord.meals.filter(m => m.logged).length;
-  const lastSession = sessions[sessions.length - 1];
+  const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const localDateOf = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const todaySessions = sessions.filter(s => localDateOf(s.timestamp) === localToday);
+  const lastSession = todaySessions[todaySessions.length - 1] ?? sessions[sessions.length - 1];
 
   const displayDimensions: DimensionScores = locked && lastSession ? { ...DEFAULT_DIMENSIONS, ...lastSession.dimensions } : dimensions;
   const displayMood = locked && lastSession ? lastSession.mood : mood;
@@ -714,6 +717,36 @@ export function MobileApp() {
       <div style={{ margin: '0 0' }}>
         <ChecklistGrid />
       </div>
+
+      {/* ── Today's sessions ── */}
+      {todaySessions.length > 0 && (
+        <div style={{ margin: '0 16px', background: '#16213e', border: '2px solid rgba(155,137,196,0.35)', borderRadius: 4, boxShadow: '3px 3px 0px #7a6fa0', padding: '12px 14px' }}>
+          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#ffe066', marginBottom: 10 }}>
+            TODAY · {todaySessions.length} {todaySessions.length === 1 ? 'SESSION' : 'SESSIONS'}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {[...todaySessions].reverse().map(s => {
+              const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
+              const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[s.confirmedZone];
+              return (
+                <div key={s.id} style={{ background: 'rgba(155,137,196,0.08)', border: '1px solid rgba(155,137,196,0.2)', borderRadius: 4, padding: '8px 10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#fdfcff', flexShrink: 0 }}>{t}</span>
+                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#ffe066' }}>{MOOD_EMOJI(s.mood)} {s.mood}</span>
+                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#b5ead7' }}>⚡{s.energy}</span>
+                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#c9b8f0' }}>🧘{s.emotionalRegulation}</span>
+                    <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ width: 7, height: 7, borderRadius: '50%', background: zc, display: 'inline-block' }} />
+                      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: zc }}>{s.confirmedZone.toUpperCase()}</span>
+                    </div>
+                  </div>
+                  {s.note && <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: 'rgba(155,137,196,0.7)', fontStyle: 'italic', margin: '4px 0 0' }}>{s.note}</p>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Collapsible sections ── */}
       <SymptomsSection />
