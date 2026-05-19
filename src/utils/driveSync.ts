@@ -153,14 +153,24 @@ const driveUpload = (path: string, options?: RequestInit) =>
 
 // ─── file operations ──────────────────────────────────────────────────────────
 
+// Searches by name; also cleans up duplicates if multiple files exist
 async function findExistingFileId(): Promise<string | null> {
   const res = await driveApi(
-    `/files?spaces=appDataFolder&q=name%3D"${FILE_NAME}"&fields=files(id)&pageSize=1`
+    `/files?spaces=appDataFolder&q=name%3D"${FILE_NAME}"&fields=files(id,modifiedTime)&orderBy=modifiedTime+desc&pageSize=10`
   );
   if (!res.ok) return null;
   const data = await res.json();
-  const id: string | null = data.files?.[0]?.id ?? null;
-  if (id) useDriveStore.getState().setFileId(id);
+  const files: { id: string; modifiedTime: string }[] = data.files ?? [];
+  if (!files.length) return null;
+
+  const id = files[0].id;
+  useDriveStore.getState().setFileId(id);
+
+  // Delete any stale duplicates (same name, older modification time)
+  for (const f of files.slice(1)) {
+    driveApi(`/files/${f.id}`, { method: 'DELETE' }).catch(() => {});
+  }
+
   return id;
 }
 
@@ -360,7 +370,9 @@ export async function syncFromDrive(): Promise<void> {
 
   store.setSyncStatus('syncing');
   try {
-    const fileId = store.fileId ?? (await findExistingFileId());
+    // Always search by name — ensures we use the current canonical file even if
+    // the cached fileId is stale (e.g. after app rename from lifehex → selene)
+    const fileId = await findExistingFileId();
 
     if (!fileId) {
       // No remote data yet — first use from this device
@@ -368,7 +380,15 @@ export async function syncFromDrive(): Promise<void> {
       return;
     }
 
-    const content = await readFileContent(fileId);
+    let content: string;
+    try {
+      content = await readFileContent(fileId);
+    } catch {
+      // File ID became invalid between search and read — bail gracefully
+      useDriveStore.getState().setFileId(null);
+      useDriveStore.getState().setSyncStatus('idle');
+      return;
+    }
     const remote: SyncPayload = JSON.parse(content);
     applyPayload(remote);
 
