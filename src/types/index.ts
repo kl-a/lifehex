@@ -82,6 +82,7 @@ export interface DayRecord {
   dominantZone: 'green' | 'amber' | 'red' | null;
   created_at: string;
   updated_at: string;
+  fieldUpdatedAt?: Record<string, string>;
 }
 
 export interface CycleEntry {

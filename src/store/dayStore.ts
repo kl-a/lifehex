@@ -45,8 +45,14 @@ function defaultDayRecord(date: string): DayRecord {
     moodAverage: null,
     dominantZone: null,
     created_at: new Date().toISOString(),
-    updated_at: '', // empty so any remote record with real data always wins the sync merge
+    updated_at: '',       // empty so any remote with real data always wins
+    fieldUpdatedAt: {},   // empty — per-field timestamps default to '' (always loses to any real update)
   };
+}
+
+// Helper: stamp a field key with the current time
+function stamp(record: DayRecord, key: string): Record<string, string> {
+  return { ...(record.fieldUpdatedAt ?? {}), [key]: new Date().toISOString() };
 }
 
 interface DayStore {
@@ -84,7 +90,6 @@ export const useDayStore = create<DayStore>()(
         const today = todayDate();
         const current = get().dayRecord;
         if (current.date !== today) {
-          // Archive the outgoing day before resetting
           useDayHistoryStore.getState().archiveDay(current);
           set({ dayRecord: defaultDayRecord(today) });
         }
@@ -97,12 +102,18 @@ export const useDayStore = create<DayStore>()(
             medicationTaken: taken,
             medicationTime: taken ? new Date().toISOString() : null,
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'medication'),
           },
         })),
 
       setMedicationTime: (iso) =>
         set((s) => ({
-          dayRecord: { ...s.dayRecord, medicationTime: iso, updated_at: new Date().toISOString() },
+          dayRecord: {
+            ...s.dayRecord,
+            medicationTime: iso,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'medication'),
+          },
         })),
 
       setMedicationMorningTaken: (taken) =>
@@ -113,12 +124,18 @@ export const useDayStore = create<DayStore>()(
             medicationMorningTime: taken ? new Date().toISOString() : null,
             medicationTaken: taken || s.dayRecord.medicationArvoTaken,
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'medicationMorning'),
           },
         })),
 
       setMedicationMorningTime: (iso) =>
         set((s) => ({
-          dayRecord: { ...s.dayRecord, medicationMorningTime: iso, updated_at: new Date().toISOString() },
+          dayRecord: {
+            ...s.dayRecord,
+            medicationMorningTime: iso,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'medicationMorning'),
+          },
         })),
 
       setMedicationArvoTaken: (taken) =>
@@ -129,12 +146,18 @@ export const useDayStore = create<DayStore>()(
             medicationArvoTime: taken ? new Date().toISOString() : null,
             medicationTaken: s.dayRecord.medicationMorningTaken || taken,
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'medicationArvo'),
           },
         })),
 
       setMedicationArvoTime: (iso) =>
         set((s) => ({
-          dayRecord: { ...s.dayRecord, medicationArvoTime: iso, updated_at: new Date().toISOString() },
+          dayRecord: {
+            ...s.dayRecord,
+            medicationArvoTime: iso,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'medicationArvo'),
+          },
         })),
 
       updateMeal: (meal, patch) =>
@@ -151,6 +174,7 @@ export const useDayStore = create<DayStore>()(
                 : m
             ),
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, meal),
           },
         })),
 
@@ -162,6 +186,7 @@ export const useDayStore = create<DayStore>()(
               m.meal === meal ? { ...m, loggedTime: iso } : m
             ),
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, meal),
           },
         })),
 
@@ -172,6 +197,7 @@ export const useDayStore = create<DayStore>()(
             lunchBreakTaken: taken,
             lunchBreakTime: taken ? new Date().toISOString() : null,
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'lunchBreak'),
           },
         })),
 
@@ -182,12 +208,18 @@ export const useDayStore = create<DayStore>()(
             gymToday: v,
             gymTime: v ? new Date().toISOString() : null,
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'gym'),
           },
         })),
 
       setGymTime: (iso) =>
         set((s) => ({
-          dayRecord: { ...s.dayRecord, gymTime: iso, updated_at: new Date().toISOString() },
+          dayRecord: {
+            ...s.dayRecord,
+            gymTime: iso,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'gym'),
+          },
         })),
 
       setAloneTimeToday: (v) =>
@@ -197,12 +229,18 @@ export const useDayStore = create<DayStore>()(
             aloneTimeToday: v,
             aloneTimeStart: v ? new Date().toISOString() : null,
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'aloneTime'),
           },
         })),
 
       setAloneTimeStart: (iso) =>
         set((s) => ({
-          dayRecord: { ...s.dayRecord, aloneTimeStart: iso, updated_at: new Date().toISOString() },
+          dayRecord: {
+            ...s.dayRecord,
+            aloneTimeStart: iso,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'aloneTime'),
+          },
         })),
 
       toggleSymptom: (symptom) =>
@@ -213,29 +251,79 @@ export const useDayStore = create<DayStore>()(
               ? s.dayRecord.symptoms.filter((x) => x !== symptom)
               : [...s.dayRecord.symptoms, symptom],
             updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'symptoms'),
           },
         })),
 
       setBrainFog: (v) =>
-        set((s) => ({ dayRecord: { ...s.dayRecord, brainFog: v, updated_at: new Date().toISOString() } })),
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            brainFog: v,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'brainFog'),
+          },
+        })),
 
       setWorkingMemoryImpaired: (v) =>
-        set((s) => ({ dayRecord: { ...s.dayRecord, workingMemoryImpaired: v, updated_at: new Date().toISOString() } })),
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            workingMemoryImpaired: v,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'workingMemory'),
+          },
+        })),
 
       setFocusQuality: (v) =>
-        set((s) => ({ dayRecord: { ...s.dayRecord, focusQuality: v, updated_at: new Date().toISOString() } })),
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            focusQuality: v,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'focusQuality'),
+          },
+        })),
 
       setSleepHours: (v) =>
-        set((s) => ({ dayRecord: { ...s.dayRecord, sleepHours: v, updated_at: new Date().toISOString() } })),
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            sleepHours: v,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'sleep'),
+          },
+        })),
 
       setSleepQuality: (v) =>
-        set((s) => ({ dayRecord: { ...s.dayRecord, sleepQuality: v, updated_at: new Date().toISOString() } })),
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            sleepQuality: v,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'sleep'),
+          },
+        })),
 
       setThatWasntMe: (v) =>
-        set((s) => ({ dayRecord: { ...s.dayRecord, thatWasntMe: v, updated_at: new Date().toISOString() } })),
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            thatWasntMe: v,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'thatWasntMe'),
+          },
+        })),
 
       setThatWasntMeNote: (note) =>
-        set((s) => ({ dayRecord: { ...s.dayRecord, thatWasntMeNote: note, updated_at: new Date().toISOString() } })),
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            thatWasntMeNote: note,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'thatWasntMe'),
+          },
+        })),
     }),
     { name: 'selene_day' }
   )

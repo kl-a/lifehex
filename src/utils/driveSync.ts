@@ -4,7 +4,7 @@ import { useDayStore } from '../store/dayStore';
 import { useDayHistoryStore } from '../store/dayHistoryStore';
 import { useCycleStore } from '../store/cycleStore';
 import { useSettingsStore } from '../store/settingsStore';
-import type { Session, DayRecord, CycleEntry } from '../types';
+import type { Session, DayRecord, CycleEntry, MealLog } from '../types';
 
 // ─── GIS types ────────────────────────────────────────────────────────────────
 
@@ -284,6 +284,66 @@ function mergeByDate<T extends { date: string; updated_at?: string; created_at?:
   return Array.from(map.values()).sort((a, b) => b.date.localeCompare(a.date));
 }
 
+// Per-field merge for DayRecord — each field group wins based on its own timestamp.
+// Missing timestamps default to '' so any real interaction beats a blank default record.
+function mergeDayRecords(local: DayRecord, remote: DayRecord): DayRecord {
+  const lf = local.fieldUpdatedAt ?? {};
+  const rf = remote.fieldUpdatedAt ?? {};
+  const win = (key: string) => (rf[key] ?? '') > (lf[key] ?? '');
+
+  // Merge per-field timestamps: keep the newer of the two
+  const mergedFts: Record<string, string> = {};
+  for (const k of new Set([...Object.keys(lf), ...Object.keys(rf)])) {
+    mergedFts[k] = (rf[k] ?? '') > (lf[k] ?? '') ? rf[k] : lf[k];
+  }
+
+  function pickMeal(name: 'breakfast' | 'lunch' | 'dinner'): MealLog {
+    const l = local.meals.find((m) => m.meal === name) ?? { meal: name, logged: false, loggedTime: null, note: '', properBreak: false };
+    const r = remote.meals?.find((m) => m.meal === name);
+    return r && win(name) ? r : l;
+  }
+
+  const morningTaken = win('medicationMorning') ? remote.medicationMorningTaken : local.medicationMorningTaken;
+  const arvoTaken    = win('medicationArvo')    ? remote.medicationArvoTaken    : local.medicationArvoTaken;
+
+  return {
+    id: local.id,
+    date: local.date,
+    created_at: local.created_at,
+
+    medicationMorningTaken: morningTaken,
+    medicationMorningTime:  win('medicationMorning') ? remote.medicationMorningTime : local.medicationMorningTime,
+    medicationArvoTaken:    arvoTaken,
+    medicationArvoTime:     win('medicationArvo')    ? remote.medicationArvoTime    : local.medicationArvoTime,
+    medicationTaken:        morningTaken || arvoTaken,
+    medicationTime:         win('medication') ? remote.medicationTime : local.medicationTime,
+
+    meals: (['breakfast', 'lunch', 'dinner'] as const).map(pickMeal),
+    lunchBreakTaken: win('lunchBreak') ? remote.lunchBreakTaken : local.lunchBreakTaken,
+    lunchBreakTime:  win('lunchBreak') ? remote.lunchBreakTime  : local.lunchBreakTime,
+
+    gymToday:       win('gym')       ? remote.gymToday       : local.gymToday,
+    gymTime:        win('gym')       ? remote.gymTime        : local.gymTime,
+    aloneTimeToday: win('aloneTime') ? remote.aloneTimeToday : local.aloneTimeToday,
+    aloneTimeStart: win('aloneTime') ? remote.aloneTimeStart : local.aloneTimeStart,
+
+    symptoms:              win('symptoms')      ? remote.symptoms              : local.symptoms,
+    brainFog:              win('brainFog')      ? remote.brainFog              : local.brainFog,
+    workingMemoryImpaired: win('workingMemory') ? remote.workingMemoryImpaired : local.workingMemoryImpaired,
+    focusQuality:          win('focusQuality')  ? remote.focusQuality          : local.focusQuality,
+    sleepHours:            win('sleep')         ? remote.sleepHours            : local.sleepHours,
+    sleepQuality:          win('sleep')         ? remote.sleepQuality          : local.sleepQuality,
+    thatWasntMe:           win('thatWasntMe')   ? remote.thatWasntMe           : local.thatWasntMe,
+    thatWasntMeNote:       win('thatWasntMe')   ? remote.thatWasntMeNote       : local.thatWasntMeNote,
+
+    moodAverage:  local.moodAverage,
+    dominantZone: local.dominantZone,
+
+    fieldUpdatedAt: mergedFts,
+    updated_at: Object.values(mergedFts).sort().pop() ?? local.updated_at ?? '',
+  };
+}
+
 function applyPayload(remote: SyncPayload): void {
   const { sessions } = useHistoryStore.getState();
   const { dayRecord } = useDayStore.getState();
@@ -298,11 +358,7 @@ function applyPayload(remote: SyncPayload): void {
   });
 
   if (remote.dayRecord?.date === dayRecord.date) {
-    // Use updated_at only (not created_at) — fresh empty records have updated_at='' so
-    // any device that actually modified data will always win over a blank default record
-    const remoteTs = remote.dayRecord.updated_at ?? '';
-    const localTs = dayRecord.updated_at ?? '';
-    if (remoteTs > localTs) useDayStore.setState({ dayRecord: remote.dayRecord });
+    useDayStore.setState({ dayRecord: mergeDayRecords(dayRecord, remote.dayRecord) });
   }
 
   useCycleStore.setState({
