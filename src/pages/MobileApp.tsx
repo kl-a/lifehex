@@ -603,6 +603,7 @@ export function MobileApp() {
 
   const [page, setPage] = useState<Page>('home');
   const [confirmedZone, setConfirmedZone] = useState<Zone>('green');
+  const [hasManualOverride, setHasManualOverride] = useState(false);
   const [zoneSheetOpen, setZoneSheetOpen] = useState(false);
   const [flashing, setFlashing] = useState(false);
 
@@ -635,12 +636,14 @@ export function MobileApp() {
       const last = sessions[sessions.length - 1];
       const safeDims: DimensionScores = { ...DEFAULT_DIMENSIONS, ...(last?.dimensions ?? {}) };
       unlock(safeDims, last?.mood ?? 5, last?.energy ?? 5, last?.emotionalRegulation ?? 5);
+      setHasManualOverride(false);
     } else {
+      const finalZone = hasManualOverride ? confirmedZone : systemZone;
       const newSession: Session = {
         id: uuid(), timestamp: new Date().toISOString(),
         dimensions: { ...dimensions }, mood, energy, emotionalRegulation: regulation,
-        systemZone, confirmedZone,
-        zoneOverride: confirmedZone !== systemZone ? { sessionId: '', date: isoDate(now), systemSuggested: systemZone, userConfirmed: confirmedZone, inputsSnapshot: zoneInputs } : null,
+        systemZone, confirmedZone: finalZone,
+        zoneOverride: hasManualOverride && confirmedZone !== systemZone ? { sessionId: '', date: isoDate(now), systemSuggested: systemZone, userConfirmed: confirmedZone, inputsSnapshot: zoneInputs } : null,
         note: note.trim() || undefined,
         created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
       };
@@ -727,7 +730,8 @@ export function MobileApp() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {[...todaySessions].reverse().map(s => {
               const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
-              const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[s.confirmedZone];
+              const displayedZone = s.zoneOverride ? s.confirmedZone : s.systemZone;
+              const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[displayedZone];
               return (
                 <div key={s.id} style={{ background: 'rgba(155,137,196,0.08)', border: '1px solid rgba(155,137,196,0.2)', borderRadius: 4, padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -737,7 +741,7 @@ export function MobileApp() {
                     <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#c9b8f0' }}>🧘{s.emotionalRegulation}</span>
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span style={{ width: 7, height: 7, borderRadius: '50%', background: zc, display: 'inline-block' }} />
-                      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: zc }}>{s.confirmedZone.toUpperCase()}</span>
+                      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: zc }}>{displayedZone.toUpperCase()}</span>
                     </div>
                   </div>
                   {s.note && <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: 'rgba(155,137,196,0.7)', fontStyle: 'italic', margin: '4px 0 0' }}>{s.note}</p>}
@@ -792,7 +796,7 @@ export function MobileApp() {
 
       <AnimatePresence>
         {zoneSheetOpen && (
-          <ZoneOverrideSheet current={systemZone} onSelect={setConfirmedZone} onClose={() => setZoneSheetOpen(false)} />
+          <ZoneOverrideSheet current={systemZone} onSelect={(z) => { setConfirmedZone(z); setHasManualOverride(true); }} onClose={() => setZoneSheetOpen(false)} />
         )}
       </AnimatePresence>
     </div>

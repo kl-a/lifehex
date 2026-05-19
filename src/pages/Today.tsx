@@ -203,6 +203,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
   const [activeDimKey, setActiveDimKey] = useState<keyof DimensionScores | null>(null);
   const [hoveredDimKey, setHoveredDimKey] = useState<keyof DimensionScores | null>(null);
   const [confirmedZone, setConfirmedZone] = useState<'green' | 'amber' | 'red'>('green');
+  const [hasManualOverride, setHasManualOverride] = useState(false);
   const [clockNow, setClockNow] = useState(new Date());
   useEffect(() => {
     const tick = setInterval(() => setClockNow(new Date()), 1000);
@@ -265,14 +266,16 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
         nourishment: (last?.dimensions as any)?.nourishment ?? dimensions.nourishment,
       };
       unlock(safeDims, last?.mood ?? mood, last?.energy ?? energy, last?.emotionalRegulation ?? regulation);
+      setHasManualOverride(false);
     } else {
+      const finalZone = hasManualOverride ? confirmedZone : systemZone;
       const newSession: Session = {
         id: uuid(),
         timestamp: new Date().toISOString(),
         dimensions: { ...dimensions },
         mood, energy, emotionalRegulation: regulation,
-        systemZone, confirmedZone,
-        zoneOverride: confirmedZone !== systemZone ? {
+        systemZone, confirmedZone: finalZone,
+        zoneOverride: hasManualOverride && confirmedZone !== systemZone ? {
           sessionId: '', date: isoDate(now),
           systemSuggested: systemZone, userConfirmed: confirmedZone,
           inputsSnapshot: { mood, energy, regulation, isLutealPhase: phaseInfo.phase === 'luteal', medicationTaken: dayRecord.medicationTaken, isWeekday, symptomCount: dayRecord.symptoms.length, thatWasntMeToday: dayRecord.thatWasntMe, sleepQuality: dayRecord.sleepQuality, mealsLogged, gymToday: dayRecord.gymToday },
@@ -324,7 +327,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
             <PeriodStrip phaseInfo={phaseInfo} periodLen={periodLen} onTap={goCycle} />
           </div>
           <div className="flex-shrink-0 w-52">
-            <RegulationBadge zone={displayZone} reasons={zoneReasons} onOverride={(z) => setConfirmedZone(z)} />
+            <RegulationBadge zone={displayZone} reasons={zoneReasons} onOverride={(z) => { setConfirmedZone(z); setHasManualOverride(true); }} />
           </div>
         </div>
       </div>
@@ -456,8 +459,9 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               <div className="flex flex-col gap-1.5">
                 {[...todaySessions].reverse().map((s) => {
                   const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
-                  const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[s.confirmedZone];
-                  const zLabel = { green: 'GREEN', amber: 'AMBER', red: 'RED' }[s.confirmedZone];
+                  const displayedZone = s.zoneOverride ? s.confirmedZone : s.systemZone;
+                  const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[displayedZone];
+                  const zLabel = { green: 'GREEN', amber: 'AMBER', red: 'RED' }[displayedZone];
                   return (
                     <div key={s.id} className="flex flex-col gap-0.5 px-3 py-2 rounded border border-muted-purple/20" style={{ background: 'rgba(155,137,196,0.08)' }}>
                       <div className="flex items-center gap-2">
