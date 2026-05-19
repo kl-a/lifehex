@@ -45,7 +45,7 @@ function defaultDayRecord(date: string): DayRecord {
     moodAverage: null,
     dominantZone: null,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    updated_at: '', // empty so any remote record with real data always wins the sync merge
   };
 }
 

@@ -298,8 +298,10 @@ function applyPayload(remote: SyncPayload): void {
   });
 
   if (remote.dayRecord?.date === dayRecord.date) {
-    const remoteTs = remote.dayRecord.updated_at ?? remote.dayRecord.created_at ?? '';
-    const localTs = dayRecord.updated_at ?? dayRecord.created_at ?? '';
+    // Use updated_at only (not created_at) — fresh empty records have updated_at='' so
+    // any device that actually modified data will always win over a blank default record
+    const remoteTs = remote.dayRecord.updated_at ?? '';
+    const localTs = dayRecord.updated_at ?? '';
     if (remoteTs > localTs) useDayStore.setState({ dayRecord: remote.dayRecord });
   }
 
