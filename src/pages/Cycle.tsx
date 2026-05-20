@@ -247,30 +247,34 @@ export function Cycle() {
   const periodExpectedDate = addDays(isoDate(today), daysUntilPeriod);
 
   // Phase ring geometry
-  const size = 240, cx = size / 2, cy = size / 2, R = size / 2 - 12, r = R - 30;
+  const size = 240, cx = size / 2, cy = size / 2;
+  const R = size / 2 - 14;    // outer radius = 106
+  const r = R - 38;            // inner radius = 68  → ring thickness 38
+  const midR = (R + r) / 2;   // stroke mid-radius = 87
+  const ringW = R - r;        // stroke width = 38
+  const gapAngle = 0.028;     // small angular gap between segments
   const total = cycleLen;
   const dayAngle = (d: number) => -Math.PI / 2 + ((d - 1) / total) * 2 * Math.PI;
 
   const ringArcs = [
-    { from: 1, to: periodLen, fill: '#f7cac9', stroke: '#c98a88', phase: 'menstrual' },
-    { from: periodLen + 1, to: total / 2 - 1, fill: '#b5ead7', stroke: '#6aab90', phase: 'follicular' },
-    { from: total / 2 - 1, to: total / 2 + 1, fill: '#ffeaa7', stroke: '#c9a84c', phase: 'ovulation' },
-    { from: total / 2 + 1, to: total, fill: '#c9b8f0', stroke: '#7a6fa0', phase: 'luteal' },
+    { from: 1,             to: periodLen,      color: '#f7cac9', phase: 'menstrual'  },
+    { from: periodLen + 1, to: total / 2 - 1,  color: '#b5ead7', phase: 'follicular' },
+    { from: total / 2 - 1, to: total / 2 + 1,  color: '#ffeaa7', phase: 'ovulation'  },
+    { from: total / 2 + 1, to: total,           color: '#c9b8f0', phase: 'luteal'     },
   ];
 
-  const ringPath = (from: number, to: number) => {
-    const a0 = dayAngle(from), a1 = dayAngle(to);
-    const oX0 = cx + Math.cos(a0) * R, oY0 = cy + Math.sin(a0) * R;
-    const oX1 = cx + Math.cos(a1) * R, oY1 = cy + Math.sin(a1) * R;
-    const iX0 = cx + Math.cos(a1) * r, iY0 = cy + Math.sin(a1) * r;
-    const iX1 = cx + Math.cos(a0) * r, iY1 = cy + Math.sin(a0) * r;
-    const large = (to - from) / total > 0.5 ? 1 : 0;
-    return `M ${oX0} ${oY0} A ${R} ${R} 0 ${large} 1 ${oX1} ${oY1} L ${iX0} ${iY0} A ${r} ${r} 0 ${large} 0 ${iX1} ${iY1} Z`;
-  };
+  function arcPath(from: number, to: number): string {
+    const a0 = dayAngle(from) + gapAngle;
+    const a1 = dayAngle(to + 1) - gapAngle;
+    const x0 = cx + Math.cos(a0) * midR, y0 = cy + Math.sin(a0) * midR;
+    const x1 = cx + Math.cos(a1) * midR, y1 = cy + Math.sin(a1) * midR;
+    const large = (to - from + 1) / total > 0.5 ? 1 : 0;
+    return `M ${x0} ${y0} A ${midR} ${midR} 0 ${large} 1 ${x1} ${y1}`;
+  }
 
   const markerAngle = dayAngle(phaseInfo.cyclePos);
-  const mx = cx + Math.cos(markerAngle) * ((R + r) / 2);
-  const my = cy + Math.sin(markerAngle) * ((R + r) / 2);
+  const mx = cx + Math.cos(markerAngle) * midR;
+  const my = cy + Math.sin(markerAngle) * midR;
 
   function handleStart() {
     if (periodActive) return;
@@ -308,18 +312,20 @@ export function Cycle() {
           {/* Phase ring card */}
           <div className="card-indigo flex flex-col items-center gap-3">
             <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} shapeRendering="geometricPrecision" style={{ maxWidth: '100%' }}>
+              {/* Dim background track */}
+              <circle cx={cx} cy={cy} r={midR} fill="none" stroke="rgba(155,137,196,0.1)" strokeWidth={ringW} />
+              {/* Phase arcs — rounded stroke, no borders */}
               {ringArcs.map((a, i) => (
-                <path key={i} d={ringPath(a.from, a.to)} fill={a.fill} stroke={a.stroke} strokeWidth="1.5"
-                  opacity={phaseInfo.phase === a.phase ? 1 : 0.35} />
+                <path key={i} d={arcPath(a.from, a.to)} fill="none"
+                  stroke={a.color} strokeWidth={ringW} strokeLinecap="round"
+                  opacity={phaseInfo.phase === a.phase ? 1 : 0.25} />
               ))}
-              {Array.from({ length: total }).map((_, i) => {
-                const ang = dayAngle(i + 1);
-                return <line key={i} x1={cx + Math.cos(ang) * R} y1={cy + Math.sin(ang) * R} x2={cx + Math.cos(ang) * (R - 4)} y2={cy + Math.sin(ang) * (R - 4)} stroke="rgba(22,33,62,0.8)" strokeWidth="1" />;
-              })}
-              <circle cx={mx} cy={my} r="5" fill="#ffe066" stroke="#16213e" strokeWidth="2" />
-              <text x={cx} y={cy - 16} textAnchor="middle" fontFamily="'Press Start 2P'" fontWeight="700" fontSize="8" fill="#9b89c4">DAY</text>
-              <text x={cx} y={cy + 14} textAnchor="middle" fontFamily="'Press Start 2P'" fontWeight="700" fontSize="38" fill="#ffeaa7">{phaseInfo.cyclePos}</text>
-              <text x={cx} y={cy + 28} textAnchor="middle" fontFamily="'Press Start 2P'" fontWeight="700" fontSize="8" fill="#fdfcff">OF {total}</text>
+              {/* Current day dot */}
+              <circle cx={mx} cy={my} r={6} fill="#ffe066" stroke="#1a1a2e" strokeWidth={1} />
+              {/* Center labels */}
+              <text x={cx} y={cy - 22} textAnchor="middle" fontFamily="Nunito, sans-serif" fontWeight="600" fontSize="11" fill="rgba(155,137,196,0.65)" letterSpacing="3">DAY</text>
+              <text x={cx} y={cy + 18} textAnchor="middle" fontFamily="Nunito, sans-serif" fontWeight="800" fontSize="50" fill="#ffeaa7">{phaseInfo.cyclePos}</text>
+              <text x={cx} y={cy + 36} textAnchor="middle" fontFamily="Nunito, sans-serif" fontWeight="600" fontSize="13" fill="rgba(253,252,255,0.55)">OF {total}</text>
             </svg>
             <div className="flex items-center gap-3">
               <MoonIcon phase={phaseInfo.phase} size={26} />
