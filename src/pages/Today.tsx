@@ -204,8 +204,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
   const [hoveredDimKey, setHoveredDimKey] = useState<keyof DimensionScores | null>(null);
   const [confirmedZone, setConfirmedZone] = useState<'green' | 'amber' | 'red'>('green');
   const [hasManualOverride, setHasManualOverride] = useState(false);
-  const [editingTimeId, setEditingTimeId] = useState<string | null>(null);
-  const [editingTimeValue, setEditingTimeValue] = useState('');
+  const [timeEditModal, setTimeEditModal] = useState<{ id: string; value: string } | null>(null);
   const [clockNow, setClockNow] = useState(new Date());
   useEffect(() => {
     const tick = setInterval(() => setClockNow(new Date()), 1000);
@@ -252,19 +251,20 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
 
   function openTimeEdit(s: Session) {
     const d = new Date(s.timestamp);
-    setEditingTimeValue(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
-    setEditingTimeId(s.id);
+    setTimeEditModal({ id: s.id, value: `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}` });
   }
 
-  function saveTimeEdit(id: string) {
-    const [h, m] = editingTimeValue.split(':').map(Number);
+  function saveTimeEdit() {
+    if (!timeEditModal) return;
+    const { id, value } = timeEditModal;
+    const [h, m] = value.split(':').map(Number);
     const sess = sessions.find((s) => s.id === id);
     if (sess && !isNaN(h) && !isNaN(m)) {
       const d = new Date(sess.timestamp);
       d.setHours(h, m, 0, 0);
       updateSession(id, { timestamp: d.toISOString() });
     }
-    setEditingTimeId(null);
+    setTimeEditModal(null);
   }
 
   function handleToggleLock() {
@@ -482,35 +482,17 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
                   const displayedZone = s.zoneOverride ? s.confirmedZone : s.systemZone;
                   const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[displayedZone];
                   const zLabel = { green: 'GREEN', amber: 'AMBER', red: 'RED' }[displayedZone];
-                  const isEditingTime = editingTimeId === s.id;
                   return (
                     <div key={s.id} className="flex flex-col gap-0.5 px-3 py-2 rounded border border-muted-purple/20" style={{ background: 'rgba(155,137,196,0.08)' }}>
                       <div className="flex items-center gap-2">
-                      {isEditingTime ? (
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <input
-                            type="time"
-                            value={editingTimeValue}
-                            onChange={(e) => setEditingTimeValue(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') saveTimeEdit(s.id); if (e.key === 'Escape') setEditingTimeId(null); }}
-                            autoFocus
-                            className="bg-night-sky border border-muted-purple/50 rounded px-1 py-0.5 text-[12px] text-cloud-white outline-none focus:border-muted-purple"
-                            style={{ colorScheme: 'dark', width: 90 }}
-                          />
-                          <button onClick={() => saveTimeEdit(s.id)} className="text-mint-green hover:text-mint-green/80 transition-colors text-sm font-bold leading-none" title="Save">✓</button>
-                          <button onClick={() => setEditingTimeId(null)} className="text-muted-purple/60 hover:text-blush-pink transition-colors text-sm leading-none" title="Cancel">✕</button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <span className="font-body font-bold text-[13px] text-cloud-white">{t}</span>
-                          <button
-                            onClick={() => openTimeEdit(s)}
-                            className="text-muted-purple/50 hover:text-star-gold transition-colors leading-none"
-                            title="Edit time"
-                            style={{ fontSize: 13, lineHeight: 1, padding: '0 2px', cursor: 'pointer' }}
-                          >🕐</button>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => openTimeEdit(s)}
+                        className="font-body font-bold text-[13px] text-cloud-white flex-shrink-0 flex items-center gap-1 hover:text-star-gold transition-colors"
+                        style={{ background: 'none', border: 'none', padding: '2px 4px', cursor: 'pointer', borderRadius: 3 }}
+                        title="Edit time"
+                      >
+                        {t} <span style={{ fontSize: 11, opacity: 0.5 }}>🕐</span>
+                      </button>
                       <span className="font-body font-bold text-[12px] flex-shrink-0" style={{ color: '#ffe066' }}>{MOOD_EMOJI(s.mood)} {s.mood}</span>
                       <span className="font-body font-bold text-[12px] flex-shrink-0" style={{ color: '#b5ead7' }}>⚡ {s.energy}</span>
                       <span className="font-body font-bold text-[12px] flex-shrink-0" style={{ color: '#c9b8f0' }}>🧘 {s.emotionalRegulation}</span>
@@ -538,6 +520,52 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
           <PhysicalSymptoms />
         </div>
       </div>
+
+      {/* Session time edit modal */}
+      <AnimatePresence>
+        {timeEditModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{ background: 'rgba(26,26,46,0.75)', backdropFilter: 'blur(4px)' }}
+            onClick={() => setTimeEditModal(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.92, opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="card-indigo flex flex-col gap-4"
+              style={{ width: 260, borderRadius: 10, border: '2px solid #9b89c4' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="text-[9px] font-bold uppercase tracking-widest text-star-gold">Edit Session Time</div>
+              <input
+                type="time"
+                value={timeEditModal.value}
+                onChange={(e) => setTimeEditModal((m) => m ? { ...m, value: e.target.value } : m)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveTimeEdit(); if (e.key === 'Escape') setTimeEditModal(null); }}
+                autoFocus
+                className="bg-night-sky border border-muted-purple/50 rounded px-3 py-2 text-[16px] text-cloud-white outline-none focus:border-muted-purple w-full text-center"
+                style={{ colorScheme: 'dark' }}
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={saveTimeEdit}
+                  className="flex-1 py-2 rounded text-[10px] font-bold uppercase tracking-widest text-mint-green border border-mint-shadow/50 hover:bg-mint-green/10 transition-colors"
+                >Save</button>
+                <button
+                  onClick={() => setTimeEditModal(null)}
+                  className="flex-1 py-2 rounded text-[10px] font-bold uppercase tracking-widest text-muted-purple border border-muted-purple/30 hover:bg-muted-purple/10 transition-colors"
+                >Cancel</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Dimension bottom sheet */}
       <AnimatePresence>

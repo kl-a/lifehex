@@ -59,6 +59,7 @@ interface SyncPayload {
   version: number;
   syncedAt: string;
   sessions: Session[];
+  deletedSessionIds?: { id: string; deletedAt: string }[];
   dayRecord: DayRecord;
   dayHistory: DayRecord[];
   cycles: CycleEntry[];
@@ -237,10 +238,13 @@ function buildPayload(): SyncPayload {
     weekdayMedicationTracking,
   } = useSettingsStore.getState();
 
+  const { deletedSessionIds } = useHistoryStore.getState();
+
   return {
     version: 3,
     syncedAt: new Date().toISOString(),
     sessions,
+    deletedSessionIds: deletedSessionIds ?? [],
     dayRecord,
     dayHistory,
     cycles,
@@ -345,13 +349,26 @@ function mergeDayRecords(local: DayRecord, remote: DayRecord): DayRecord {
 }
 
 function applyPayload(remote: SyncPayload): void {
-  const { sessions } = useHistoryStore.getState();
+  const { sessions, deletedSessionIds: localDeleted } = useHistoryStore.getState();
   const { dayRecord } = useDayStore.getState();
   const { dayRecords: dayHistory } = useDayHistoryStore.getState();
   const { cycles } = useCycleStore.getState();
   const localSettings = useSettingsStore.getState();
 
-  useHistoryStore.setState({ sessions: mergeById(sessions, remote.sessions ?? []) });
+  // Merge tombstones: union of both sides, keep latest deletedAt per id
+  const remoteTombstones = remote.deletedSessionIds ?? [];
+  const tombstoneMap = new Map<string, string>();
+  for (const t of [...(localDeleted ?? []), ...remoteTombstones]) {
+    const existing = tombstoneMap.get(t.id);
+    if (!existing || t.deletedAt > existing) tombstoneMap.set(t.id, t.deletedAt);
+  }
+  const mergedTombstones = Array.from(tombstoneMap.entries()).map(([id, deletedAt]) => ({ id, deletedAt }));
+
+  // Merge sessions then strip any tombstoned IDs
+  const mergedSessions = mergeById(sessions, remote.sessions ?? [])
+    .filter((s) => !tombstoneMap.has(s.id));
+
+  useHistoryStore.setState({ sessions: mergedSessions, deletedSessionIds: mergedTombstones });
 
   useDayHistoryStore.setState({
     dayRecords: mergeByDate(dayHistory, remote.dayHistory ?? []),
