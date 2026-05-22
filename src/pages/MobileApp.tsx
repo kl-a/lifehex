@@ -594,7 +594,7 @@ function SettingsPage({ onBack }: { onBack: () => void }) {
 
 export function MobileApp() {
   const { locked, dimensions, mood, energy, regulation, lastSavedISO, note, unlock, lock, setDimension, setMood, setEnergy, setRegulation, setNote } = useSessionStore();
-  const { sessions, addSession } = useHistoryStore();
+  const { sessions, addSession, updateSession } = useHistoryStore();
   const { dayRecord } = useDayStore();
   const { cycles } = useCycleStore();
   const { expectedCycleLength: cycleLen, expectedPeriodLength: periodLen } = useSettingsStore();
@@ -606,6 +606,8 @@ export function MobileApp() {
   const [hasManualOverride, setHasManualOverride] = useState(false);
   const [zoneSheetOpen, setZoneSheetOpen] = useState(false);
   const [flashing, setFlashing] = useState(false);
+  const [timeEditSessionId, setTimeEditSessionId] = useState<string | null>(null);
+  const [timeEditValue, setTimeEditValue] = useState('');
 
   const now = useMemo(() => new Date(), []);
   const cycleStartISO = cycles.length ? cycles[0].cycleStartDate : isoDate(now);
@@ -652,6 +654,24 @@ export function MobileApp() {
       lock();
       setFlashing(true);
     }
+  }
+
+  function openSessionTimeEdit(s: Session) {
+    const d = new Date(s.timestamp);
+    setTimeEditValue(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
+    setTimeEditSessionId(s.id);
+  }
+
+  function saveSessionTimeEdit() {
+    if (!timeEditSessionId || !timeEditValue) { setTimeEditSessionId(null); return; }
+    const [h, m] = timeEditValue.split(':').map(Number);
+    const sess = sessions.find((s) => s.id === timeEditSessionId);
+    if (sess && !isNaN(h) && !isNaN(m)) {
+      const d = new Date(sess.timestamp);
+      d.setHours(h, m, 0, 0);
+      updateSession(timeEditSessionId, { timestamp: d.toISOString() });
+    }
+    setTimeEditSessionId(null);
   }
 
   if (page === 'settings') return <SettingsPage onBack={() => setPage('home')} />;
@@ -735,7 +755,10 @@ export function MobileApp() {
               return (
                 <div key={s.id} style={{ background: 'rgba(155,137,196,0.08)', border: '1px solid rgba(155,137,196,0.2)', borderRadius: 4, padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#fdfcff', flexShrink: 0 }}>{t}</span>
+                    <button
+                      onClick={() => openSessionTimeEdit(s)}
+                      style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#fdfcff', flexShrink: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline dotted rgba(155,137,196,0.5)', textUnderlineOffset: 3 }}
+                    >{t}</button>
                     <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#ffe066' }}>{MOOD_EMOJI(s.mood)} {s.mood}</span>
                     <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#b5ead7' }}>⚡{s.energy}</span>
                     <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#c9b8f0' }}>🧘{s.emotionalRegulation}</span>
@@ -793,6 +816,34 @@ export function MobileApp() {
           onAnimationComplete={() => setFlashing(false)}
           style={{ position: 'fixed', inset: 0, background: '#b5ead7', pointerEvents: 'none', zIndex: 50 }} />
       )}
+
+      {/* Session time edit sheet */}
+      <AnimatePresence>
+        {timeEditSessionId && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(26,26,46,0.85)', zIndex: 60 }}
+            onClick={() => setTimeEditSessionId(null)}>
+            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              style={{ position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: '#16213e', borderTop: '2px solid #9b89c4', borderRadius: '8px 8px 0 0', padding: '20px 16px 40px' }}
+              onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(155,137,196,0.4)' }} />
+              </div>
+              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#ffe066', marginBottom: 16 }}>EDIT SESSION TIME</div>
+              <input
+                type="time" value={timeEditValue} onChange={e => setTimeEditValue(e.target.value)}
+                autoFocus
+                style={{ width: '100%', background: '#1a1a2e', border: '1px solid rgba(155,137,196,0.4)', borderRadius: 4, padding: '12px', color: '#fdfcff', fontFamily: 'Nunito, sans-serif', fontSize: 18, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }}
+              />
+              <button onClick={saveSessionTimeEdit}
+                style={{ marginTop: 14, width: '100%', padding: 12, cursor: 'pointer', background: 'rgba(181,234,215,0.2)', border: '1px solid #6aab90', borderRadius: 4, color: '#b5ead7', fontFamily: "'Press Start 2P', monospace", fontSize: 10 }}>
+                SAVE
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {zoneSheetOpen && (

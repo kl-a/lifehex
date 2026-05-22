@@ -6,7 +6,7 @@ interface HistoryStore {
   sessions: Session[];
   addSession: (session: Session) => void;
   removeSession: (id: string) => void;
-  updateSession: (id: string, patch: Partial<Pick<Session, 'mood' | 'energy' | 'emotionalRegulation' | 'confirmedZone'>>) => void;
+  updateSession: (id: string, patch: Partial<Pick<Session, 'mood' | 'energy' | 'emotionalRegulation' | 'confirmedZone' | 'timestamp'>>) => void;
   clearSessions: () => void;
   importSessions: (sessions: Session[]) => void;
 }
