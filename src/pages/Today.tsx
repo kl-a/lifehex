@@ -410,7 +410,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
           {/* State timeline — below radar, separated by divider */}
           <div className="flex-shrink-0 mt-2 pt-2 border-t border-muted-purple/20">
             <div className="text-[9px] font-bold uppercase tracking-widest text-muted-purple mb-1">State Today</div>
-            <StateTimeline sessions={todaySessions} />
+            <StateTimeline sessions={[...todaySessions].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())} />
           </div>
         </div>
 
