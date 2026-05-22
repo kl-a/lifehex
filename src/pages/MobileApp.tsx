@@ -755,10 +755,14 @@ export function MobileApp() {
               return (
                 <div key={s.id} style={{ background: 'rgba(155,137,196,0.08)', border: '1px solid rgba(155,137,196,0.2)', borderRadius: 4, padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <button
-                      onClick={() => openSessionTimeEdit(s)}
-                      style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#fdfcff', flexShrink: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', textDecoration: 'underline dotted rgba(155,137,196,0.5)', textUnderlineOffset: 3 }}
-                    >{t}</button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                      <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#fdfcff' }}>{t}</span>
+                      <button
+                        onClick={() => openSessionTimeEdit(s)}
+                        style={{ background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer', fontSize: 13, lineHeight: 1, color: 'rgba(155,137,196,0.5)' }}
+                        title="Edit time"
+                      >🕐</button>
+                    </div>
                     <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#ffe066' }}>{MOOD_EMOJI(s.mood)} {s.mood}</span>
                     <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#b5ead7' }}>⚡{s.energy}</span>
                     <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#c9b8f0' }}>🧘{s.emotionalRegulation}</span>

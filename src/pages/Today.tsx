@@ -493,15 +493,19 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
                           onBlur={() => saveTimeEdit(s.id)}
                           onKeyDown={(e) => { if (e.key === 'Enter') saveTimeEdit(s.id); if (e.key === 'Escape') setEditingTimeId(null); }}
                           autoFocus
-                          className="w-20 flex-shrink-0 bg-night-sky border border-muted-purple/50 rounded px-1 py-0.5 text-[12px] text-cloud-white outline-none focus:border-muted-purple"
-                          style={{ colorScheme: 'dark' }}
+                          className="flex-shrink-0 bg-night-sky border border-muted-purple/50 rounded px-1 py-0.5 text-[12px] text-cloud-white outline-none focus:border-muted-purple"
+                          style={{ colorScheme: 'dark', width: 90 }}
                         />
                       ) : (
-                        <button
-                          onClick={() => openTimeEdit(s)}
-                          className="font-body font-bold text-[13px] text-cloud-white flex-shrink-0 w-20 text-left hover:text-star-gold transition-colors"
-                          title="Edit time"
-                        >{t}</button>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <span className="font-body font-bold text-[13px] text-cloud-white">{t}</span>
+                          <button
+                            onClick={() => openTimeEdit(s)}
+                            className="text-muted-purple/50 hover:text-star-gold transition-colors leading-none"
+                            title="Edit time"
+                            style={{ fontSize: 13, lineHeight: 1, padding: '0 2px', cursor: 'pointer' }}
+                          >🕐</button>
+                        </div>
                       )}
                       <span className="font-body font-bold text-[12px] flex-shrink-0" style={{ color: '#ffe066' }}>{MOOD_EMOJI(s.mood)} {s.mood}</span>
                       <span className="font-body font-bold text-[12px] flex-shrink-0" style={{ color: '#b5ead7' }}>⚡ {s.energy}</span>
