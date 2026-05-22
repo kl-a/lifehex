@@ -477,7 +477,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               <div className="font-body text-[12px] text-muted-purple/50">No sessions yet — lock a state to save one.</div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {[...todaySessions].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((s) => {
+                {[...todaySessions].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((s) => {
                   const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
                   const displayedZone = s.zoneOverride ? s.confirmedZone : s.systemZone;
                   const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[displayedZone];
@@ -487,16 +487,19 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
                     <div key={s.id} className="flex flex-col gap-0.5 px-3 py-2 rounded border border-muted-purple/20" style={{ background: 'rgba(155,137,196,0.08)' }}>
                       <div className="flex items-center gap-2">
                       {isEditingTime ? (
-                        <input
-                          type="time"
-                          value={editingTimeValue}
-                          onChange={(e) => setEditingTimeValue(e.target.value)}
-                          onBlur={() => saveTimeEdit(s.id)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') saveTimeEdit(s.id); if (e.key === 'Escape') setEditingTimeId(null); }}
-                          autoFocus
-                          className="flex-shrink-0 bg-night-sky border border-muted-purple/50 rounded px-1 py-0.5 text-[12px] text-cloud-white outline-none focus:border-muted-purple"
-                          style={{ colorScheme: 'dark', width: 90 }}
-                        />
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <input
+                            type="time"
+                            value={editingTimeValue}
+                            onChange={(e) => setEditingTimeValue(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') saveTimeEdit(s.id); if (e.key === 'Escape') setEditingTimeId(null); }}
+                            autoFocus
+                            className="bg-night-sky border border-muted-purple/50 rounded px-1 py-0.5 text-[12px] text-cloud-white outline-none focus:border-muted-purple"
+                            style={{ colorScheme: 'dark', width: 90 }}
+                          />
+                          <button onClick={() => saveTimeEdit(s.id)} className="text-mint-green hover:text-mint-green/80 transition-colors text-sm font-bold leading-none" title="Save">✓</button>
+                          <button onClick={() => setEditingTimeId(null)} className="text-muted-purple/60 hover:text-blush-pink transition-colors text-sm leading-none" title="Cancel">✕</button>
+                        </div>
                       ) : (
                         <div className="flex items-center gap-1 flex-shrink-0">
                           <span className="font-body font-bold text-[13px] text-cloud-white">{t}</span>
