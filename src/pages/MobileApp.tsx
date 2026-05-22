@@ -748,7 +748,7 @@ export function MobileApp() {
             TODAY · {todaySessions.length} {todaySessions.length === 1 ? 'SESSION' : 'SESSIONS'}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {[...todaySessions].reverse().map(s => {
+            {[...todaySessions].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map(s => {
               const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
               const displayedZone = s.zoneOverride ? s.confirmedZone : s.systemZone;
               const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[displayedZone];

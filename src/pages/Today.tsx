@@ -476,7 +476,7 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               <div className="font-body text-[12px] text-muted-purple/50">No sessions yet — lock a state to save one.</div>
             ) : (
               <div className="flex flex-col gap-1.5">
-                {[...todaySessions].reverse().map((s) => {
+                {[...todaySessions].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()).map((s) => {
                   const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
                   const displayedZone = s.zoneOverride ? s.confirmedZone : s.systemZone;
                   const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[displayedZone];
