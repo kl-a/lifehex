@@ -229,7 +229,8 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
 
   const isWeekday = now.getDay() >= 1 && now.getDay() <= 5;
   const mealsLogged = dayRecord.meals.filter((m) => m.logged).length;
-  const lastSession = todaySessions[todaySessions.length - 1] ?? sessions[sessions.length - 1];
+  const latestByTime = (arr: Session[]) => arr.length ? [...arr].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0] : undefined;
+  const lastSession = latestByTime(todaySessions) ?? latestByTime(sessions);
 
   // Display values — derive from last session when locked so the badge always recalculates from real data
   const displayDimensions: DimensionScores = locked && lastSession

@@ -618,7 +618,8 @@ export function MobileApp() {
   const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const localDateOf = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const todaySessions = sessions.filter(s => localDateOf(s.timestamp) === localToday);
-  const lastSession = todaySessions[todaySessions.length - 1] ?? sessions[sessions.length - 1];
+  const latestByTime = (arr: Session[]) => arr.length ? [...arr].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0] : undefined;
+  const lastSession = latestByTime(todaySessions) ?? latestByTime(sessions);
 
   const displayDimensions: DimensionScores = locked && lastSession ? { ...DEFAULT_DIMENSIONS, ...lastSession.dimensions } : dimensions;
   const displayMood = locked && lastSession ? lastSession.mood : mood;
