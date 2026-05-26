@@ -40,6 +40,11 @@ function daysBetween(a: string, b: string): number {
   return Math.floor((new Date(b + 'T00:00:00').getTime() - new Date(a + 'T00:00:00').getTime()) / 86400000);
 }
 
+function localIsoDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function addDaysToIso(iso: string, n: number): string {
   const d = new Date(iso + 'T00:00:00');
   d.setDate(d.getDate() + n);
@@ -236,7 +241,7 @@ function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
     const start = cycle.cycleStartDate;
     const end = cycle.cycleEndDate ?? isoDate(new Date());
     for (const s of sessions) {
-      const sessionDate = s.timestamp.slice(0, 10);
+      const sessionDate = localIsoDate(s.timestamp);
       if (sessionDate >= start && sessionDate <= end) {
         const cd = daysBetween(start, sessionDate) + 1;
         if (cd >= 1 && cd <= 28) {
