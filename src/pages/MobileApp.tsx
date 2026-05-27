@@ -70,7 +70,7 @@ function CompactSlider({ label, value, onChange, disabled, emojiForValue, color 
       onPointerUp={() => { dragging.current = false; }}
       onPointerCancel={() => { dragging.current = false; }}
     >
-      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#9b89c4', width: 60, flexShrink: 0 }}>
+      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#c0b2e0', width: 60, flexShrink: 0 }}>
         {label}
       </span>
 
@@ -151,10 +151,10 @@ function ZoneBadge({ zone, reasons, onTap }: { zone: Zone; reasons: string[]; on
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
         <span style={{ width: 7, height: 7, borderRadius: '50%', background: s.dot, display: 'inline-block', flexShrink: 0 }} />
-        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: s.dot }}>{s.label}</span>
+        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: s.dot }}>{s.label}</span>
       </div>
       {zone !== 'green' && reasons.length > 0 && (
-        <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 10, color: '#9b89c4', lineHeight: 1.2 }}>
+        <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#c0b2e0', lineHeight: 1.2 }}>
           {reasons.slice(0, 2).join(' · ')}
         </span>
       )}
@@ -175,15 +175,15 @@ function StatusBar({ phaseInfo, periodLen, hasCycle, zone, zoneReasons, onZoneTa
   const warningClose = !inPeriod && daysUntilPeriod <= 12;
 
   let barBg = '#16213e';
-  let barBorder = '#9b89c4';
+  let barBorder = '#c0b2e0';
   if (inLuteal) { barBg = 'rgba(255,234,167,0.08)'; barBorder = '#c9a84c'; }
   if (inPeriod || warningClose) { barBg = 'rgba(247,202,201,0.08)'; barBorder = '#c98a88'; }
 
   let icon = '🌙', text = `${daysUntilPeriod}d to period`, color = '#c9b8f0', font = 'Nunito, sans-serif', size = 13;
-  if (!hasCycle) { text = 'Set up cycle →'; color = '#9b89c4'; }
-  else if (inPeriod) { icon = '🔴'; text = `Period day ${phaseInfo.cyclePos}`; color = '#f7cac9'; font = "'Press Start 2P', monospace"; size = 10; }
-  else if (warningClose) { icon = '⚠️'; text = `${daysUntilPeriod}d to period`; color = '#f7cac9'; font = "'Press Start 2P', monospace"; size = 10; }
-  else if (inLuteal) { text = `Luteal · ${daysUntilPeriod}d`; color = '#ffeaa7'; font = "'Press Start 2P', monospace"; size = 10; }
+  if (!hasCycle) { text = 'Set up cycle →'; color = '#c0b2e0'; }
+  else if (inPeriod) { icon = '🔴'; text = `Period day ${phaseInfo.cyclePos}`; color = '#f7cac9'; font = "'Press Start 2P', monospace"; size = 12; }
+  else if (warningClose) { icon = '⚠️'; text = `${daysUntilPeriod}d to period`; color = '#f7cac9'; font = "'Press Start 2P', monospace"; size = 12; }
+  else if (inLuteal) { text = `Luteal · ${daysUntilPeriod}d`; color = '#ffeaa7'; font = "'Press Start 2P', monospace"; size = 12; }
 
   return (
     <div style={{ background: barBg, border: `2px solid ${barBorder}`, borderRadius: 4, margin: '0 16px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, boxShadow: '3px 3px 0px rgba(155,137,196,0.3)' }}>
@@ -237,7 +237,7 @@ function ChecklistGrid() {
     display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none',
     background: checked ? 'rgba(181,234,215,0.15)' : '#16213e',
     border: `2px solid ${checked ? '#6aab90' : 'rgba(155,137,196,0.4)'}`,
-    boxShadow: `3px 3px 0px ${checked ? '#6aab90' : '#7a6fa0'}`,
+    boxShadow: `3px 3px 0px ${checked ? '#6aab90' : '#a096c8'}`,
     transition: 'background 0.12s, border-color 0.12s',
   });
 
@@ -250,12 +250,12 @@ function ChecklistGrid() {
       <div style={cellStyle(checked)} onClick={onToggle}>
         <span style={{ fontSize: 20, flexShrink: 0 }}>{emoji}</span>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: checked ? '#b5ead7' : '#fdfcff' }}>{label}</div>
+          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: checked ? '#b5ead7' : '#fdfcff' }}>{label}</div>
           {checked && fmtTime(iso) && (
-            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 10, color: '#6aab90', marginTop: 3 }}>{fmtTime(iso)}</div>
+            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#6aab90', marginTop: 3 }}>{fmtTime(iso)}</div>
           )}
         </div>
-        {checked && <span style={{ position: 'absolute', top: 6, right: 8, color: '#b5ead7', fontSize: 12, fontWeight: 700 }}>✓</span>}
+        {checked && <span style={{ position: 'absolute', top: 6, right: 8, color: '#b5ead7', fontSize: 13, fontWeight: 700 }}>✓</span>}
         {checked && (
           <button
             onClick={(e) => openClock(clockT, iso, e)}
@@ -275,8 +275,8 @@ function ChecklistGrid() {
           <div style={{ ...cellStyle(false), opacity: 0.4, cursor: 'default', pointerEvents: 'none', gridColumn: 'span 2' }}>
             <span style={{ fontSize: 20 }}>💊</span>
             <div>
-              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#9b89c4' }}>Medication</div>
-              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: '#7a6fa0', marginTop: 2 }}>REST DAY</div>
+              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#c0b2e0' }}>Medication</div>
+              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#a096c8', marginTop: 2 }}>REST DAY</div>
             </div>
           </div>
         ) : (
@@ -320,14 +320,14 @@ function ChecklistGrid() {
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
                 <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(155,137,196,0.4)' }} />
               </div>
-              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#ffe066', marginBottom: 16 }}>EDIT TIME</div>
+              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#ffe066', marginBottom: 16 }}>EDIT TIME</div>
               <input
                 type="time" value={timeInput} onChange={e => setTimeInput(e.target.value)}
                 autoFocus
                 style={{ width: '100%', background: '#1a1a2e', border: '1px solid rgba(155,137,196,0.4)', borderRadius: 4, padding: '12px', color: '#fdfcff', fontFamily: 'Nunito, sans-serif', fontSize: 18, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }}
               />
               <button onClick={saveTime}
-                style={{ marginTop: 14, width: '100%', padding: 12, cursor: 'pointer', background: 'rgba(181,234,215,0.2)', border: '1px solid #6aab90', borderRadius: 4, color: '#b5ead7', fontFamily: "'Press Start 2P', monospace", fontSize: 10 }}>
+                style={{ marginTop: 14, width: '100%', padding: 12, cursor: 'pointer', background: 'rgba(181,234,215,0.2)', border: '1px solid #6aab90', borderRadius: 4, color: '#b5ead7', fontFamily: "'Press Start 2P', monospace", fontSize: 12 }}>
                 SAVE
               </button>
             </motion.div>
@@ -352,9 +352,9 @@ function SymptomsSection() {
       <button onClick={() => setOpen(v => !v)}
         style={{ width: '100%', padding: '14px 14px', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer' }}>
         <motion.span animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.15 }}
-          style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#9b89c4', display: 'inline-block', transformOrigin: 'center' }}>▶</motion.span>
-        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#9b89c4' }}>SYMPTOMS</span>
-        {!open && <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: '#7a6fa0', marginLeft: 4, flex: 1, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>}
+          style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#c0b2e0', display: 'inline-block', transformOrigin: 'center' }}>▶</motion.span>
+        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#c0b2e0' }}>SYMPTOMS</span>
+        {!open && <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#a096c8', marginLeft: 4, flex: 1, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>}
       </button>
 
       <AnimatePresence>
@@ -367,7 +367,7 @@ function SymptomsSection() {
                   const active = dayRecord.symptoms.includes(s);
                   return (
                     <button key={s} onClick={() => toggleSymptom(s)}
-                      style={{ height: 36, padding: '0 12px', borderRadius: 4, cursor: 'pointer', border: `1px solid ${active ? '#c98a88' : '#9b89c4'}`, background: active ? 'rgba(247,202,201,0.2)' : 'transparent', color: active ? '#f7cac9' : '#9b89c4', fontFamily: 'Nunito, sans-serif', fontSize: 13, userSelect: 'none', display: 'flex', alignItems: 'center' }}>
+                      style={{ height: 36, padding: '0 12px', borderRadius: 4, cursor: 'pointer', border: `1px solid ${active ? '#c98a88' : '#c0b2e0'}`, background: active ? 'rgba(247,202,201,0.2)' : 'transparent', color: active ? '#f7cac9' : '#c0b2e0', fontFamily: 'Nunito, sans-serif', fontSize: 13, userSelect: 'none', display: 'flex', alignItems: 'center' }}>
                       {s}
                     </button>
                   );
@@ -377,31 +377,31 @@ function SymptomsSection() {
                 <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#fdfcff', marginBottom: 10 }}>😶 "That wasn't me" today</div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button onClick={() => setThatWasntMe(false)}
-                    style={{ flex: 1, padding: 8, borderRadius: 4, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 12, fontWeight: 700, background: !dayRecord.thatWasntMe ? 'rgba(155,137,196,0.15)' : 'transparent', border: `1px solid ${!dayRecord.thatWasntMe ? '#9b89c4' : 'rgba(155,137,196,0.3)'}`, color: !dayRecord.thatWasntMe ? '#fdfcff' : '#7a6fa0' }}>No</button>
+                    style={{ flex: 1, padding: 8, borderRadius: 4, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 13, fontWeight: 700, background: !dayRecord.thatWasntMe ? 'rgba(155,137,196,0.15)' : 'transparent', border: `1px solid ${!dayRecord.thatWasntMe ? '#c0b2e0' : 'rgba(155,137,196,0.3)'}`, color: !dayRecord.thatWasntMe ? '#fdfcff' : '#a096c8' }}>No</button>
                   <button onClick={() => { setThatWasntMe(true); setNoteSheetOpen(true); }}
-                    style={{ flex: 1, padding: 8, borderRadius: 4, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 12, fontWeight: 700, background: dayRecord.thatWasntMe ? 'rgba(247,202,201,0.15)' : 'transparent', border: `1px solid ${dayRecord.thatWasntMe ? '#c98a88' : 'rgba(155,137,196,0.3)'}`, color: dayRecord.thatWasntMe ? '#f7cac9' : '#7a6fa0' }}>Yes + note</button>
+                    style={{ flex: 1, padding: 8, borderRadius: 4, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 13, fontWeight: 700, background: dayRecord.thatWasntMe ? 'rgba(247,202,201,0.15)' : 'transparent', border: `1px solid ${dayRecord.thatWasntMe ? '#c98a88' : 'rgba(155,137,196,0.3)'}`, color: dayRecord.thatWasntMe ? '#f7cac9' : '#a096c8' }}>Yes + note</button>
                 </div>
                 {dayRecord.thatWasntMe && dayRecord.thatWasntMeNote && (
-                  <div style={{ marginTop: 8, fontFamily: 'Nunito, sans-serif', fontSize: 11, color: '#9b89c4', fontStyle: 'italic' }}>"{dayRecord.thatWasntMeNote}"</div>
+                  <div style={{ marginTop: 8, fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#c0b2e0', fontStyle: 'italic' }}>"{dayRecord.thatWasntMeNote}"</div>
                 )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#9b89c4' }}>Brain fog</span>
+                  <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#c0b2e0' }}>Brain fog</span>
                   <div style={{ display: 'flex', gap: 4 }}>
                     {([1, 2, 3] as const).map((v, i) => {
                       const active = dayRecord.brainFog === v;
-                      return <button key={v} onClick={() => setBrainFog(active ? null : v)} style={{ padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 700, background: active ? 'rgba(201,184,240,0.2)' : 'transparent', border: `1px solid ${active ? '#c9b8f0' : 'rgba(155,137,196,0.3)'}`, color: active ? '#c9b8f0' : '#7a6fa0' }}>{['Low', 'Med', 'High'][i]}</button>;
+                      return <button key={v} onClick={() => setBrainFog(active ? null : v)} style={{ padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 13, fontWeight: 700, background: active ? 'rgba(201,184,240,0.2)' : 'transparent', border: `1px solid ${active ? '#c9b8f0' : 'rgba(155,137,196,0.3)'}`, color: active ? '#c9b8f0' : '#a096c8' }}>{['Low', 'Med', 'High'][i]}</button>;
                     })}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#9b89c4' }}>Working memory</span>
+                  <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#c0b2e0' }}>Working memory</span>
                   <div style={{ display: 'flex', gap: 4 }}>
                     {(['Fine', 'Struggling'] as const).map(label => {
                       const val = label === 'Struggling';
                       const active = dayRecord.workingMemoryImpaired === val;
-                      return <button key={label} onClick={() => setWorkingMemoryImpaired(val)} style={{ padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 11, fontWeight: 700, background: active ? 'rgba(201,184,240,0.2)' : 'transparent', border: `1px solid ${active ? '#c9b8f0' : 'rgba(155,137,196,0.3)'}`, color: active ? '#c9b8f0' : '#7a6fa0' }}>{label}</button>;
+                      return <button key={label} onClick={() => setWorkingMemoryImpaired(val)} style={{ padding: '4px 10px', borderRadius: 3, cursor: 'pointer', fontFamily: 'Nunito, sans-serif', fontSize: 13, fontWeight: 700, background: active ? 'rgba(201,184,240,0.2)' : 'transparent', border: `1px solid ${active ? '#c9b8f0' : 'rgba(155,137,196,0.3)'}`, color: active ? '#c9b8f0' : '#a096c8' }}>{label}</button>;
                     })}
                   </div>
                 </div>
@@ -427,7 +427,7 @@ function SymptomsSection() {
               <input type="text" value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Brief note..." autoFocus
                 style={{ width: '100%', background: '#1a1a2e', borderRadius: 4, outline: 'none', border: '1px solid rgba(155,137,196,0.3)', padding: '10px 12px', color: '#fdfcff', fontFamily: 'Nunito, sans-serif', fontSize: 14, boxSizing: 'border-box' }} />
               <button onClick={() => { setThatWasntMeNote(noteText); setNoteSheetOpen(false); }}
-                style={{ marginTop: 16, width: '100%', padding: 12, cursor: 'pointer', background: 'rgba(247,202,201,0.2)', border: '1px solid #c98a88', borderRadius: 4, color: '#f7cac9', fontFamily: "'Press Start 2P', monospace", fontSize: 10 }}>SAVE NOTE</button>
+                style={{ marginTop: 16, width: '100%', padding: 12, cursor: 'pointer', background: 'rgba(247,202,201,0.2)', border: '1px solid #c98a88', borderRadius: 4, color: '#f7cac9', fontFamily: "'Press Start 2P', monospace", fontSize: 12 }}>SAVE NOTE</button>
             </motion.div>
           </motion.div>
         )}
@@ -447,9 +447,9 @@ function WheelSection({ disabled, dimensions, onChange }: { disabled: boolean; d
       <button onClick={() => setOpen(v => !v)}
         style={{ width: '100%', padding: '14px 14px', display: 'flex', alignItems: 'center', gap: 10, background: 'transparent', border: 'none', cursor: 'pointer' }}>
         <motion.span animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.15 }}
-          style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#9b89c4', display: 'inline-block', transformOrigin: 'center' }}>▶</motion.span>
-        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#9b89c4' }}>WHEEL OF LIFE</span>
-        {!open && <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 10, color: '#7a6fa0', marginLeft: 4, flex: 1, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>}
+          style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#c0b2e0', display: 'inline-block', transformOrigin: 'center' }}>▶</motion.span>
+        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#c0b2e0' }}>WHEEL OF LIFE</span>
+        {!open && <span style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#a096c8', marginLeft: 4, flex: 1, textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{summary}</span>}
       </button>
 
       <AnimatePresence>
@@ -457,11 +457,11 @@ function WheelSection({ disabled, dimensions, onChange }: { disabled: boolean; d
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
             style={{ overflow: 'hidden' }}>
             <div style={{ padding: '0 14px 14px' }}>
-              {disabled && <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: '#7a6fa0', marginBottom: 12 }}>Unlock to adjust</div>}
+              {disabled && <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#a096c8', marginBottom: 12 }}>Unlock to adjust</div>}
               {DIMENSIONS.map(d => (
                 <div key={d.key} style={{ marginBottom: 16, opacity: disabled ? 0.55 : 1 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#9b89c4' }}>{d.short}</span>
+                    <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#c0b2e0' }}>{d.short}</span>
                     <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: '#c9b8f0' }}>{dimensions[d.key]}</span>
                   </div>
                   <DimSlider value={dimensions[d.key]} onChange={v => onChange(d.key, v)} disabled={disabled} />
@@ -489,7 +489,7 @@ function ZoneOverrideSheet({ current, onSelect, onClose }: { current: Zone; onSe
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
           <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(155,137,196,0.4)' }} />
         </div>
-        <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#9b89c4', marginBottom: 16 }}>OVERRIDE ZONE</div>
+        <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#c0b2e0', marginBottom: 16 }}>OVERRIDE ZONE</div>
         <div style={{ display: 'flex', gap: 8 }}>
           {(['green', 'amber', 'red'] as Zone[]).map(z => {
             const s = ZONE_STYLE[z];
@@ -497,7 +497,7 @@ function ZoneOverrideSheet({ current, onSelect, onClose }: { current: Zone; onSe
               <button key={z} onClick={() => { onSelect(z); onClose(); }}
                 style={{ flex: 1, padding: '16px 0', borderRadius: 4, cursor: 'pointer', background: s.bg, border: `2px solid ${s.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, opacity: z === current ? 1 : 0.6 }}>
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: s.dot, display: 'inline-block' }} />
-                <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: s.dot }}>{s.label}</span>
+                <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: s.dot }}>{s.label}</span>
               </button>
             );
           })}
@@ -538,22 +538,22 @@ function SettingsPage({ onBack }: { onBack: () => void }) {
     <div style={{ width: '100%', maxWidth: 480, margin: '0 auto', minHeight: '100dvh', background: '#1a1a2e', display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
       <div style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(155,137,196,0.15)' }}>
-        <button onClick={onBack} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#9b89c4', fontFamily: "'Press Start 2P', monospace", fontSize: 10, padding: '4px 0' }}>← BACK</button>
-        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#fdfcff' }}>Settings</span>
+        <button onClick={onBack} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#c0b2e0', fontFamily: "'Press Start 2P', monospace", fontSize: 12, padding: '4px 0' }}>← BACK</button>
+        <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 13, color: '#fdfcff' }}>Settings</span>
       </div>
 
       <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         {/* Google Drive */}
         <div style={{ background: '#16213e', border: '2px solid rgba(155,137,196,0.4)', borderRadius: 4, boxShadow: '3px 3px 0px #7a6fa0', padding: 16 }}>
-          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#ffe066', marginBottom: 14 }}>GOOGLE DRIVE SYNC</div>
+          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#ffe066', marginBottom: 14 }}>GOOGLE DRIVE SYNC</div>
 
           {!connected ? (
             <>
-              <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#9b89c4', marginBottom: 14, lineHeight: 1.5 }}>
+              <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#c0b2e0', marginBottom: 14, lineHeight: 1.5 }}>
                 Connect Google Drive to sync your data across devices.
               </p>
               <button onClick={handleConnect} disabled={busy}
-                style={{ width: '100%', padding: '12px 0', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, background: '#c9b8f0', border: '2px solid #7a6fa0', borderRadius: 4, boxShadow: '3px 3px 0px #7a6fa0', color: '#2d2b3d', fontFamily: "'Press Start 2P', monospace", fontSize: 9 }}>
+                style={{ width: '100%', padding: '12px 0', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, background: '#c9b8f0', border: '2px solid #7a6fa0', borderRadius: 4, boxShadow: '3px 3px 0px #7a6fa0', color: '#2d2b3d', fontFamily: "'Press Start 2P', monospace", fontSize: 11 }}>
                 {busy ? 'CONNECTING…' : '✦ CONNECT'}
               </button>
             </>
@@ -567,22 +567,22 @@ function SettingsPage({ onBack }: { onBack: () => void }) {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={handleSyncNow} disabled={busy}
-                  style={{ flex: 1, padding: '10px 0', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, background: 'rgba(181,234,215,0.15)', border: '2px solid #6aab90', borderRadius: 4, boxShadow: '2px 2px 0px #6aab90', color: '#b5ead7', fontFamily: "'Press Start 2P', monospace", fontSize: 8 }}>
+                  style={{ flex: 1, padding: '10px 0', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, background: 'rgba(181,234,215,0.15)', border: '2px solid #6aab90', borderRadius: 4, boxShadow: '2px 2px 0px #6aab90', color: '#b5ead7', fontFamily: "'Press Start 2P', monospace", fontSize: 10 }}>
                   {busy ? '…' : 'SYNC NOW'}
                 </button>
                 <button onClick={handleDisconnect} disabled={busy}
-                  style={{ padding: '10px 14px', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, background: 'rgba(247,202,201,0.1)', border: '2px solid #c98a88', borderRadius: 4, color: '#f7cac9', fontFamily: "'Press Start 2P', monospace", fontSize: 8 }}>
+                  style={{ padding: '10px 14px', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, background: 'rgba(247,202,201,0.1)', border: '2px solid #c98a88', borderRadius: 4, color: '#f7cac9', fontFamily: "'Press Start 2P', monospace", fontSize: 10 }}>
                   DISCONNECT
                 </button>
               </div>
             </>
           )}
-          {err && <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#f7cac9', marginTop: 10 }}>{err}</div>}
+          {err && <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#f7cac9', marginTop: 10 }}>{err}</div>}
         </div>
 
         <div style={{ background: '#16213e', border: '2px solid rgba(155,137,196,0.2)', borderRadius: 4, padding: '12px 16px' }}>
-          <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 12, color: '#7a6fa0', lineHeight: 1.5 }}>
-            To change routine times, cycle length, or other settings, use the desktop app at <Link to="/" style={{ color: '#9b89c4' }}>Selene desktop →</Link>
+          <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: '#a096c8', lineHeight: 1.5 }}>
+            To change routine times, cycle length, or other settings, use the desktop app at <Link to="/" style={{ color: '#c0b2e0' }}>Selene desktop →</Link>
           </p>
         </div>
       </div>
@@ -685,7 +685,7 @@ export function MobileApp() {
         {/* Left: ⚡ Selene */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span style={{ fontSize: 16 }}>⚡</span>
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#fdfcff', letterSpacing: '0.03em' }}>Selene</span>
+          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 13, color: '#fdfcff', letterSpacing: '0.03em' }}>Selene</span>
         </div>
 
         {/* Centre: lock toggle */}
@@ -701,7 +701,7 @@ export function MobileApp() {
           }}
         >
           <PadlockIcon locked={locked} size={12} />
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: locked ? '#9b89c4' : '#b5ead7' }}>
+          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: locked ? '#c0b2e0' : '#b5ead7' }}>
             {locked ? `LOCKED${lastSavedLabel ? ` · ${lastSavedLabel}` : ''}` : 'OPEN'}
           </span>
         </motion.button>
@@ -745,7 +745,7 @@ export function MobileApp() {
       {/* ── Today's sessions ── */}
       {todaySessions.length > 0 && (
         <div style={{ margin: '0 16px', background: '#16213e', border: '2px solid rgba(155,137,196,0.35)', borderRadius: 4, boxShadow: '3px 3px 0px #7a6fa0', padding: '12px 14px' }}>
-          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#ffe066', marginBottom: 10 }}>
+          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#ffe066', marginBottom: 10 }}>
             TODAY · {todaySessions.length} {todaySessions.length === 1 ? 'SESSION' : 'SESSIONS'}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -757,22 +757,22 @@ export function MobileApp() {
                 <div key={s.id} style={{ background: 'rgba(155,137,196,0.08)', border: '1px solid rgba(155,137,196,0.2)', borderRadius: 4, padding: '8px 10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
-                      <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#fdfcff' }}>{t}</span>
+                      <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: '#fdfcff' }}>{t}</span>
                       <button
                         onClick={() => openSessionTimeEdit(s)}
                         style={{ background: 'none', border: 'none', padding: '0 2px', cursor: 'pointer', fontSize: 13, lineHeight: 1, color: 'rgba(155,137,196,0.5)' }}
                         title="Edit time"
                       >🕐</button>
                     </div>
-                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#ffe066' }}>{MOOD_EMOJI(s.mood)} {s.mood}</span>
-                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#b5ead7' }}>⚡{s.energy}</span>
-                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12, color: '#c9b8f0' }}>🧘{s.emotionalRegulation}</span>
+                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: '#ffe066' }}>{MOOD_EMOJI(s.mood)} {s.mood}</span>
+                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: '#b5ead7' }}>⚡{s.energy}</span>
+                    <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13, color: '#c9b8f0' }}>🧘{s.emotionalRegulation}</span>
                     <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
                       <span style={{ width: 7, height: 7, borderRadius: '50%', background: zc, display: 'inline-block' }} />
-                      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: zc }}>{displayedZone.toUpperCase()}</span>
+                      <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: zc }}>{displayedZone.toUpperCase()}</span>
                     </div>
                   </div>
-                  {s.note && <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: 'rgba(155,137,196,0.7)', fontStyle: 'italic', margin: '4px 0 0' }}>{s.note}</p>}
+                  {s.note && <p style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: 'rgba(155,137,196,0.7)', fontStyle: 'italic', margin: '4px 0 0' }}>{s.note}</p>}
                 </div>
               );
             })}
@@ -799,19 +799,19 @@ export function MobileApp() {
         {/* Today (active) */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 4 }}>
           <span style={{ fontSize: 18 }}>🌸</span>
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: '#ffe066' }}>Today</span>
+          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#ffe066' }}>Today</span>
         </div>
 
         {/* Desktop link */}
         <Link to="/" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 4, textDecoration: 'none' }}>
           <span style={{ fontSize: 18 }}>🖥️</span>
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: '#7a6fa0' }}>Desktop</span>
+          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#a096c8' }}>Desktop</span>
         </Link>
 
         {/* Settings */}
         <button onClick={() => setPage('settings')} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0', gap: 4, background: 'none', border: 'none', cursor: 'pointer' }}>
           <span style={{ fontSize: 18 }}>⚙️</span>
-          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: '#7a6fa0' }}>Settings</span>
+          <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#a096c8' }}>Settings</span>
         </button>
       </div>
 
@@ -835,14 +835,14 @@ export function MobileApp() {
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
                 <div style={{ width: 40, height: 4, borderRadius: 2, background: 'rgba(155,137,196,0.4)' }} />
               </div>
-              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#ffe066', marginBottom: 16 }}>EDIT SESSION TIME</div>
+              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#ffe066', marginBottom: 16 }}>EDIT SESSION TIME</div>
               <input
                 type="time" value={timeEditValue} onChange={e => setTimeEditValue(e.target.value)}
                 autoFocus
                 style={{ width: '100%', background: '#1a1a2e', border: '1px solid rgba(155,137,196,0.4)', borderRadius: 4, padding: '12px', color: '#fdfcff', fontFamily: 'Nunito, sans-serif', fontSize: 18, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }}
               />
               <button onClick={saveSessionTimeEdit}
-                style={{ marginTop: 14, width: '100%', padding: 12, cursor: 'pointer', background: 'rgba(181,234,215,0.2)', border: '1px solid #6aab90', borderRadius: 4, color: '#b5ead7', fontFamily: "'Press Start 2P', monospace", fontSize: 10 }}>
+                style={{ marginTop: 14, width: '100%', padding: 12, cursor: 'pointer', background: 'rgba(181,234,215,0.2)', border: '1px solid #6aab90', borderRadius: 4, color: '#b5ead7', fontFamily: "'Press Start 2P', monospace", fontSize: 12 }}>
                 SAVE
               </button>
             </motion.div>

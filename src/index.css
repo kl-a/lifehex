@@ -13,6 +13,12 @@
   }
 }
 
+/* Minimum readable sizes — override Tailwind arbitrary values */
+.text-\[8px\]  { font-size: 10px; }
+.text-\[9px\]  { font-size: 11px; }
+.text-\[10px\] { font-size: 12px; }
+.text-\[11px\] { font-size: 13px; }
+
 @layer components {
   /* ── Cards ── */
   .card-indigo {
