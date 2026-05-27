@@ -486,9 +486,9 @@ export function Dashboard() {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([dateStr, daySessions]) => ({
       date: new Date(dateStr + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
-      mood: +(avgArr(daySessions.map(s => s.mood))!.toFixed(1)),
-      energy: +(avgArr(daySessions.map(s => s.energy))!.toFixed(1)),
-      reg: +(avgArr(daySessions.map(s => s.emotionalRegulation))!.toFixed(1)),
+      mood: +((avgArr(daySessions.map(s => s.mood)) ?? 0).toFixed(1)),
+      energy: +((avgArr(daySessions.map(s => s.energy)) ?? 0).toFixed(1)),
+      reg: +((avgArr(daySessions.map(s => s.emotionalRegulation)) ?? 0).toFixed(1)),
     }));
 
   // Luteal reference areas for feeling chart
