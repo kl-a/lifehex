@@ -23,8 +23,9 @@ function cutoffDate(days: number): Date {
   return d;
 }
 
-function avgArr(arr: number[]): number | null {
-  return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+function avgArr(arr: (number | null | undefined)[]): number | null {
+  const nums = arr.filter((v): v is number => typeof v === 'number' && !isNaN(v));
+  return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null;
 }
 
 function avgDims(sessions: Session[]): DimensionScores {
@@ -239,7 +240,10 @@ function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
 
   for (const cycle of cycles) {
     const start = cycle.cycleStartDate;
-    const end = cycle.cycleEndDate ?? isoDate(new Date());
+    // Use full cycle window (cycleLength days), not period end date
+    const cycleFullEnd = addDaysToIso(start, (cycle.cycleLength || 28) - 1);
+    const today = isoDate(new Date());
+    const end = cycleFullEnd < today ? cycleFullEnd : today;
     for (const s of sessions) {
       const sessionDate = localIsoDate(s.timestamp);
       if (sessionDate >= start && sessionDate <= end) {

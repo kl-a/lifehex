@@ -85,7 +85,10 @@ function CyclePatternCard({ cyclePos }: { cyclePos: number }) {
 
   for (const cycle of cycles) {
     const start = cycle.cycleStartDate;
-    const end = cycle.cycleEndDate ?? isoDate(new Date());
+    // Use full cycle window (cycleLength days), not period end date
+    const cycleFullEnd = addDays(start, (cycle.cycleLength || 28) - 1);
+    const today = isoDate(new Date());
+    const end = cycleFullEnd < today ? cycleFullEnd : today;
 
     for (const s of sessions) {
       const sessionDate = localIsoDate(s.timestamp);

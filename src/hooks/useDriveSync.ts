@@ -1,15 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { useSessionStore } from '../store/sessionStore';
 import { useDriveStore } from '../store/driveStore';
+import { useDayStore } from '../store/dayStore';
 import { syncToDrive, syncFromDrive } from '../utils/driveSync';
 
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const DAY_SYNC_DELAY_MS = 5000; // debounce checklist/day changes
 
 export function useDriveSync() {
   const connected = useDriveStore((s) => s.connected);
   const locked = useSessionStore((s) => s.locked);
+  const dayUpdatedAt = useDayStore((s) => s.dayRecord.updated_at);
   const prevLockedRef = useRef(locked);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevDayUpdatedAtRef = useRef(dayUpdatedAt);
+  const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pull from Drive on mount
   useEffect(() => {
@@ -43,14 +48,30 @@ export function useDriveSync() {
   // Push to Drive 3 seconds after session is locked
   useEffect(() => {
     if (connected && locked && !prevLockedRef.current) {
-      timerRef.current = setTimeout(() => {
+      sessionTimerRef.current = setTimeout(() => {
         syncToDrive().catch(console.error);
       }, 3000);
     }
     prevLockedRef.current = locked;
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current);
     };
   }, [locked, connected]);
+
+  // Push to Drive 5 seconds after any checklist/day record change
+  useEffect(() => {
+    if (!connected) return;
+    if (dayUpdatedAt && dayUpdatedAt !== prevDayUpdatedAtRef.current) {
+      if (dayTimerRef.current) clearTimeout(dayTimerRef.current);
+      dayTimerRef.current = setTimeout(() => {
+        syncToDrive().catch(console.error);
+      }, DAY_SYNC_DELAY_MS);
+    }
+    prevDayUpdatedAtRef.current = dayUpdatedAt;
+
+    return () => {
+      if (dayTimerRef.current) clearTimeout(dayTimerRef.current);
+    };
+  }, [dayUpdatedAt, connected]);
 }
