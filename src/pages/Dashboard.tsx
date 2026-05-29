@@ -506,7 +506,8 @@ export function Dashboard() {
       const x2 = new Date(addDaysToIso(lutealEndDate, 1) + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
       lutealBands.push({ x1, x2 });
     }
-    const periodEndDate = addDaysToIso(cycle.cycleStartDate, (cycle.periodLength || periodLen) - 1);
+    // Use the logged period end date if available; fall back to periodLength estimate
+    const periodEndDate = cycle.cycleEndDate || addDaysToIso(cycle.cycleStartDate, (cycle.periodLength || periodLen) - 1);
     if (periodEndDate >= cutoffStr) {
       const x1 = new Date(cycle.cycleStartDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
       const x2 = new Date(addDaysToIso(periodEndDate, 1) + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
