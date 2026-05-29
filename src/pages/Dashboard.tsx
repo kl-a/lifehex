@@ -397,6 +397,7 @@ export function Dashboard() {
   const { cycles } = useCycleStore();
   const { expectedCycleLength: cycleLen, expectedPeriodLength: periodLen } = useSettingsStore();
   const [range, setRange] = useState(30);
+  const [drivingMetric, setDrivingMetric] = useState<'mood' | 'energy' | 'regulation'>('mood');
 
   // ── window data ──
   const cutoff = cutoffDate(range);
@@ -529,50 +530,65 @@ export function Dashboard() {
   const dayRecordByDate = new Map<string, DayRecord>();
   for (const dr of dayRecordsInRange) dayRecordByDate.set(dr.date, dr);
 
-  // Medication vs regulation
-  const medReg: number[] = [], noMedReg: number[] = [];
+  // Per-day triple: mood / energy / regulation — used by all four correlation splits
+  interface DayStat { mood: number; energy: number; reg: number }
+  const pick = (stat: DayStat) =>
+    drivingMetric === 'mood' ? stat.mood : drivingMetric === 'energy' ? stat.energy : stat.reg;
+
+  function dayStats(daySessions: Session[]): DayStat | null {
+    const m = avgArr(daySessions.map(s => s.mood));
+    const e = avgArr(daySessions.map(s => s.energy));
+    const r = avgArr(daySessions.map(s => s.emotionalRegulation));
+    if (m === null || e === null || r === null) return null;
+    return { mood: m, energy: e, reg: r };
+  }
+
+  // Medication vs no medication (weekdays only)
+  const medDays: DayStat[] = [], noMedDays: DayStat[] = [];
   for (const [date, daySessions] of sessionsByDate) {
     const dr = dayRecordByDate.get(date);
     if (!dr) continue;
-    const dayRegAvg = avgArr(daySessions.map(s => s.emotionalRegulation));
-    if (dayRegAvg === null) continue;
+    const stat = dayStats(daySessions);
+    if (!stat) continue;
     const dow = new Date(date + 'T00:00:00').getDay();
-    if (dow === 0 || dow === 6) continue; // weekdays only
-    if (dr.medicationTaken) medReg.push(dayRegAvg);
-    else noMedReg.push(dayRegAvg);
+    if (dow === 0 || dow === 6) continue;
+    if (dr.medicationTaken) medDays.push(stat);
+    else noMedDays.push(stat);
   }
 
-  // Luteal vs non-luteal (avg mood)
-  const lutealMood: number[] = [], nonLutealMood: number[] = [];
+  // Luteal vs non-luteal
+  const lutealDays: DayStat[] = [], nonLutealDays: DayStat[] = [];
   for (const [date, daySessions] of sessionsByDate) {
-    const dayMoodAvg = avgArr(daySessions.map(s => s.mood));
-    if (dayMoodAvg === null) continue;
-    if (isLutealForDate(date, cycles, cycleLen)) lutealMood.push(dayMoodAvg);
-    else nonLutealMood.push(dayMoodAvg);
+    const stat = dayStats(daySessions);
+    if (!stat) continue;
+    if (isLutealForDate(date, cycles, cycleLen)) lutealDays.push(stat);
+    else nonLutealDays.push(stat);
   }
 
-  // Gym vs no gym (avg mood)
-  const gymMood: number[] = [], noGymMood: number[] = [];
-  for (const [date, daySessions] of sessionsByDate) {
-    const dr = dayRecordByDate.get(date);
-    if (!dr) continue;
-    const dayMoodAvg = avgArr(daySessions.map(s => s.mood));
-    if (dayMoodAvg === null) continue;
-    if (dr.gymToday) gymMood.push(dayMoodAvg);
-    else noGymMood.push(dayMoodAvg);
-  }
-
-  // 3 meals vs fewer (avg regulation)
-  const fullMealReg: number[] = [], fewMealReg: number[] = [];
+  // Gym vs no gym
+  const gymDays: DayStat[] = [], noGymDays: DayStat[] = [];
   for (const [date, daySessions] of sessionsByDate) {
     const dr = dayRecordByDate.get(date);
     if (!dr) continue;
-    const dayRegAvg = avgArr(daySessions.map(s => s.emotionalRegulation));
-    if (dayRegAvg === null) continue;
+    const stat = dayStats(daySessions);
+    if (!stat) continue;
+    if (dr.gymToday) gymDays.push(stat);
+    else noGymDays.push(stat);
+  }
+
+  // 3 meals vs fewer
+  const fullMealDays: DayStat[] = [], fewMealDays: DayStat[] = [];
+  for (const [date, daySessions] of sessionsByDate) {
+    const dr = dayRecordByDate.get(date);
+    if (!dr) continue;
+    const stat = dayStats(daySessions);
+    if (!stat) continue;
     const mealCount = dr.meals.filter(m => m.logged).length;
-    if (mealCount >= 3) fullMealReg.push(dayRegAvg);
-    else fewMealReg.push(dayRegAvg);
+    if (mealCount >= 3) fullMealDays.push(stat);
+    else fewMealDays.push(stat);
   }
+
+  const metricLabel = drivingMetric === 'mood' ? 'vs. mood' : drivingMetric === 'energy' ? 'vs. energy' : 'vs. regulation';
 
   return (
     <div className="flex flex-col gap-2 overflow-hidden" style={{ height: 'calc(100vh - 104px)' }}>
@@ -669,12 +685,22 @@ export function Dashboard() {
 
           {/* Correlation cards 2×2 */}
           <div className="card-indigo flex-shrink-0">
-            <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold mb-2">What's driving it</div>
+            <div className="flex items-center justify-between mb-2">
+              <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold">What's driving it</div>
+              <div className="flex gap-1">
+                {(['mood', 'energy', 'regulation'] as const).map(m => (
+                  <button key={m} onClick={() => setDrivingMetric(m)}
+                    className={`font-bold text-[9px] px-2 py-0.5 rounded border transition-colors ${drivingMetric === m ? 'text-star-gold border-star-gold/60 bg-star-gold/10' : 'text-muted-purple border-muted-purple/30 hover:text-cloud-white'}`}>
+                    {m === 'mood' ? 'Mood' : m === 'energy' ? 'Energy' : 'Reg'}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-2">
-              <CorrelationCard emoji="💊" label="Medication" aLabel="Medicated" bLabel="Unmedicated" aAvg={avgArr(medReg)} bAvg={avgArr(noMedReg)} aCount={medReg.length} bCount={noMedReg.length} metric="vs. regulation" />
-              <CorrelationCard emoji="🌙" label="Cycle phase" aLabel="Non-luteal" bLabel="Luteal" aAvg={avgArr(nonLutealMood)} bAvg={avgArr(lutealMood)} aCount={nonLutealMood.length} bCount={lutealMood.length} metric="vs. mood" />
-              <CorrelationCard emoji="🏋️" label="Movement" aLabel="Gym days" bLabel="Rest days" aAvg={avgArr(gymMood)} bAvg={avgArr(noGymMood)} aCount={gymMood.length} bCount={noGymMood.length} metric="vs. mood" />
-              <CorrelationCard emoji="🍱" label="Meals" aLabel="3 meals" bLabel="Fewer" aAvg={avgArr(fullMealReg)} bAvg={avgArr(fewMealReg)} aCount={fullMealReg.length} bCount={fewMealReg.length} metric="vs. regulation" />
+              <CorrelationCard emoji="💊" label="Medication" aLabel="Medicated" bLabel="Unmedicated" aAvg={avgArr(medDays.map(pick))} bAvg={avgArr(noMedDays.map(pick))} aCount={medDays.length} bCount={noMedDays.length} metric={metricLabel} />
+              <CorrelationCard emoji="🌙" label="Cycle phase" aLabel="Non-luteal" bLabel="Luteal" aAvg={avgArr(nonLutealDays.map(pick))} bAvg={avgArr(lutealDays.map(pick))} aCount={nonLutealDays.length} bCount={lutealDays.length} metric={metricLabel} />
+              <CorrelationCard emoji="🏋️" label="Movement" aLabel="Gym days" bLabel="Rest days" aAvg={avgArr(gymDays.map(pick))} bAvg={avgArr(noGymDays.map(pick))} aCount={gymDays.length} bCount={noGymDays.length} metric={metricLabel} />
+              <CorrelationCard emoji="🍱" label="Meals" aLabel="3 meals" bLabel="Fewer" aAvg={avgArr(fullMealDays.map(pick))} bAvg={avgArr(fewMealDays.map(pick))} aCount={fullMealDays.length} bCount={fewMealDays.length} metric={metricLabel} />
             </div>
           </div>
 
