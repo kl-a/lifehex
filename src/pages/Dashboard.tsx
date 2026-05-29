@@ -494,8 +494,9 @@ export function Dashboard() {
       reg: +((avgArr(daySessions.map(s => s.emotionalRegulation)) ?? 0).toFixed(1)),
     }));
 
-  // Luteal reference areas for feeling chart (days 17–28 of each cycle)
+  // Reference areas for feeling chart
   const lutealBands: { x1: string; x2: string }[] = [];
+  const menstruationBands: { x1: string; x2: string }[] = [];
   for (const cycle of cycles) {
     const lutealStartDate = addDaysToIso(cycle.cycleStartDate, 16);
     const lutealEndDate = addDaysToIso(cycle.cycleStartDate, (cycle.cycleLength || cycleLen) - 1);
@@ -503,6 +504,12 @@ export function Dashboard() {
       const x1 = new Date(lutealStartDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
       const x2 = new Date(lutealEndDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
       lutealBands.push({ x1, x2 });
+    }
+    const periodEndDate = addDaysToIso(cycle.cycleStartDate, (cycle.periodLength || periodLen) - 1);
+    if (periodEndDate >= cutoffStr) {
+      const x1 = new Date(cycle.cycleStartDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      const x2 = new Date(periodEndDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      menstruationBands.push({ x1, x2 });
     }
   }
 
@@ -528,6 +535,12 @@ export function Dashboard() {
   for (const s of inRange) {
     const d = localIsoDate(s.timestamp);
     const arr = sessionsByDate.get(d) ?? []; arr.push(s); sessionsByDate.set(d, arr);
+  }
+  // All sessions by date — used for cycle phase only, so we don't miss luteal windows outside the selected range
+  const allSessionsByDate = new Map<string, Session[]>();
+  for (const s of sessions) {
+    const d = localIsoDate(s.timestamp);
+    const arr = allSessionsByDate.get(d) ?? []; arr.push(s); allSessionsByDate.set(d, arr);
   }
   const dayRecordByDate = new Map<string, DayRecord>();
   for (const dr of dayRecordsInRange) dayRecordByDate.set(dr.date, dr);
@@ -561,9 +574,9 @@ export function Dashboard() {
     else noMedDays.push(stat);
   }
 
-  // Luteal vs non-luteal
+  // Luteal vs non-luteal — use full session history so data isn't limited to the selected range window
   const lutealDays: DayStat[] = [], nonLutealDays: DayStat[] = [];
-  for (const [date, daySessions] of sessionsByDate) {
+  for (const [date, daySessions] of allSessionsByDate) {
     const stat = dayStats(daySessions);
     if (!stat) continue;
     if (isLutealForDate(date, cycles, cycleLen)) lutealDays.push(stat);
@@ -652,8 +665,11 @@ export function Dashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={feelingData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
                 <CartesianGrid stroke="#7a6fa0" strokeOpacity={0.15} horizontal vertical={false} />
+                {menstruationBands.map((b, i) => (
+                  <ReferenceArea key={`mens-${i}`} x1={b.x1} x2={b.x2} fill="rgba(247,202,201,0.2)" strokeOpacity={0} />
+                ))}
                 {lutealBands.map((b, i) => (
-                  <ReferenceArea key={i} x1={b.x1} x2={b.x2} fill="rgba(255,234,167,0.1)" strokeOpacity={0} />
+                  <ReferenceArea key={`lut-${i}`} x1={b.x1} x2={b.x2} fill="rgba(255,234,167,0.1)" strokeOpacity={0} />
                 ))}
                 <XAxis dataKey="date" tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
                 <YAxis domain={[1, 10]} tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} ticks={[1, 5, 10]} />
@@ -675,6 +691,7 @@ export function Dashboard() {
             <LegendLine color="#b5ead7" label="Energy" dashed />
             <LegendLine color="#c9b8f0" label="Regulation" dashed />
             {cycles.length > 0 && <div className="flex items-center gap-1.5"><div className="w-4 h-2 rounded" style={{ background: 'rgba(255,234,167,0.25)' }} /><span className="font-body text-[10px] text-muted-purple">Luteal</span></div>}
+            {cycles.length > 0 && <div className="flex items-center gap-1.5"><div className="w-4 h-2 rounded" style={{ background: 'rgba(247,202,201,0.45)' }} /><span className="font-body text-[10px] text-muted-purple">Period</span></div>}
           </div>
 
           {/* Zone dot strip */}
