@@ -532,16 +532,19 @@ export function Dashboard() {
   const dayRecordByDate = new Map<string, DayRecord>();
   for (const dr of dayRecordsInRange) dayRecordByDate.set(dr.date, dr);
 
-  // Per-day triple: mood / energy / regulation — used by all four correlation splits
-  interface DayStat { mood: number; energy: number; reg: number }
-  const pick = (stat: DayStat) =>
+  // Per-day triple: mood / energy / regulation — nullable so old sessions missing reg still count
+  interface DayStat { mood: number | null; energy: number | null; reg: number | null }
+  const pick = (stat: DayStat): number | null =>
     drivingMetric === 'mood' ? stat.mood : drivingMetric === 'energy' ? stat.energy : stat.reg;
+  // Returns non-null values for the selected metric — used for both avg and count
+  const pickVals = (days: DayStat[]) =>
+    days.map(pick).filter((v): v is number => v !== null);
 
   function dayStats(daySessions: Session[]): DayStat | null {
     const m = avgArr(daySessions.map(s => s.mood));
     const e = avgArr(daySessions.map(s => s.energy));
     const r = avgArr(daySessions.map(s => s.emotionalRegulation));
-    if (m === null || e === null || r === null) return null;
+    if (m === null && e === null && r === null) return null;  // No data at all
     return { mood: m, energy: e, reg: r };
   }
 
@@ -699,10 +702,10 @@ export function Dashboard() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <CorrelationCard emoji="💊" label="Medication" aLabel="Medicated" bLabel="Unmedicated" aAvg={avgArr(medDays.map(pick))} bAvg={avgArr(noMedDays.map(pick))} aCount={medDays.length} bCount={noMedDays.length} metric={metricLabel} />
-              <CorrelationCard emoji="🌙" label="Cycle phase" aLabel="Non-luteal" bLabel="Luteal" aAvg={avgArr(nonLutealDays.map(pick))} bAvg={avgArr(lutealDays.map(pick))} aCount={nonLutealDays.length} bCount={lutealDays.length} metric={metricLabel} />
-              <CorrelationCard emoji="🏋️" label="Movement" aLabel="Gym days" bLabel="Rest days" aAvg={avgArr(gymDays.map(pick))} bAvg={avgArr(noGymDays.map(pick))} aCount={gymDays.length} bCount={noGymDays.length} metric={metricLabel} />
-              <CorrelationCard emoji="🍱" label="Meals" aLabel="3 meals" bLabel="Fewer" aAvg={avgArr(fullMealDays.map(pick))} bAvg={avgArr(fewMealDays.map(pick))} aCount={fullMealDays.length} bCount={fewMealDays.length} metric={metricLabel} />
+              <CorrelationCard emoji="💊" label="Medication" aLabel="Medicated" bLabel="Unmedicated" aAvg={avgArr(pickVals(medDays))} bAvg={avgArr(pickVals(noMedDays))} aCount={pickVals(medDays).length} bCount={pickVals(noMedDays).length} metric={metricLabel} />
+              <CorrelationCard emoji="🌙" label="Cycle phase" aLabel="Non-luteal" bLabel="Luteal" aAvg={avgArr(pickVals(nonLutealDays))} bAvg={avgArr(pickVals(lutealDays))} aCount={pickVals(nonLutealDays).length} bCount={pickVals(lutealDays).length} metric={metricLabel} />
+              <CorrelationCard emoji="🏋️" label="Movement" aLabel="Gym days" bLabel="Rest days" aAvg={avgArr(pickVals(gymDays))} bAvg={avgArr(pickVals(noGymDays))} aCount={pickVals(gymDays).length} bCount={pickVals(noGymDays).length} metric={metricLabel} />
+              <CorrelationCard emoji="🍱" label="Meals" aLabel="3 meals" bLabel="Fewer" aAvg={avgArr(pickVals(fullMealDays))} bAvg={avgArr(pickVals(fewMealDays))} aCount={pickVals(fullMealDays).length} bCount={pickVals(fewMealDays).length} metric={metricLabel} />
             </div>
           </div>
 
