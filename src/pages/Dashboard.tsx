@@ -69,15 +69,17 @@ function zoneColor(zone: 'green' | 'amber' | 'red' | null): string {
 }
 
 function isLutealForDate(dateStr: string, cycles: CycleEntry[], cycleLen: number): boolean {
+  const today = isoDate(new Date());
   for (const cycle of cycles) {
     const start = cycle.cycleStartDate;
-    const end = cycle.cycleEndDate ?? isoDate(new Date());
+    const cycleFullEnd = addDaysToIso(start, (cycle.cycleLength || cycleLen) - 1);
+    const end = cycleFullEnd < today ? cycleFullEnd : today;
     if (dateStr >= start && dateStr <= end) {
       const dayNum = daysBetween(start, dateStr) + 1;
       return dayNum >= 17;
     }
   }
-  // Fall back to current cycle start
+  // Fall back: use modular arithmetic against most recent cycle start
   if (cycles.length > 0) {
     const dayNum = daysBetween(cycles[0].cycleStartDate, dateStr) + 1;
     const cycleDay = ((dayNum - 1 + cycleLen) % cycleLen) + 1;
@@ -492,11 +494,11 @@ export function Dashboard() {
       reg: +((avgArr(daySessions.map(s => s.emotionalRegulation)) ?? 0).toFixed(1)),
     }));
 
-  // Luteal reference areas for feeling chart
+  // Luteal reference areas for feeling chart (days 17–28 of each cycle)
   const lutealBands: { x1: string; x2: string }[] = [];
   for (const cycle of cycles) {
     const lutealStartDate = addDaysToIso(cycle.cycleStartDate, 16);
-    const lutealEndDate = cycle.cycleEndDate ?? addDaysToIso(cycle.cycleStartDate, cycleLen - 1);
+    const lutealEndDate = addDaysToIso(cycle.cycleStartDate, (cycle.cycleLength || cycleLen) - 1);
     if (lutealEndDate >= cutoffStr) {
       const x1 = new Date(lutealStartDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
       const x2 = new Date(lutealEndDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
