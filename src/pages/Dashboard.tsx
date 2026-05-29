@@ -502,13 +502,14 @@ export function Dashboard() {
     const lutealEndDate = addDaysToIso(cycle.cycleStartDate, (cycle.cycleLength || cycleLen) - 1);
     if (lutealEndDate >= cutoffStr) {
       const x1 = new Date(lutealStartDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-      const x2 = new Date(lutealEndDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      // x2 = one day past end so Recharts extends the band to include the last day's full column
+      const x2 = new Date(addDaysToIso(lutealEndDate, 1) + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
       lutealBands.push({ x1, x2 });
     }
     const periodEndDate = addDaysToIso(cycle.cycleStartDate, (cycle.periodLength || periodLen) - 1);
     if (periodEndDate >= cutoffStr) {
       const x1 = new Date(cycle.cycleStartDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-      const x2 = new Date(periodEndDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+      const x2 = new Date(addDaysToIso(periodEndDate, 1) + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
       menstruationBands.push({ x1, x2 });
     }
   }
