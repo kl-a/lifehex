@@ -418,7 +418,7 @@ export function Dashboard() {
   // ── aggregate stats ──
   const moodAvg = avgArr(inRange.map(s => s.mood));
   const regAvg = avgArr(inRange.map(s => s.emotionalRegulation));
-  const daysLogged = new Set(inRange.map(s => s.timestamp.slice(0, 10))).size;
+  const daysLogged = new Set(inRange.map(s => localIsoDate(s.timestamp))).size;
 
   // ── cycle ──
   const cycleStartISO = cycles.length ? cycles[0].cycleStartDate : isoDate(new Date());
@@ -526,7 +526,7 @@ export function Dashboard() {
   // ── correlation data ──
   const sessionsByDate = new Map<string, Session[]>();
   for (const s of inRange) {
-    const d = s.timestamp.slice(0, 10);
+    const d = localIsoDate(s.timestamp);
     const arr = sessionsByDate.get(d) ?? []; arr.push(s); sessionsByDate.set(d, arr);
   }
   const dayRecordByDate = new Map<string, DayRecord>();
