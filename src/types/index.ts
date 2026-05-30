@@ -63,6 +63,8 @@ export interface DayRecord {
   medicationMorningTime: string | null;
   medicationArvoTaken: boolean;
   medicationArvoTime: string | null;
+  ssriTaken: boolean;
+  ssriTime: string | null;
   meals: MealLog[];
   lunchBreakTaken: boolean;
   lunchBreakTime: string | null;

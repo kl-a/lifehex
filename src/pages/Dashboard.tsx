@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -119,12 +119,14 @@ function CorrelationCard({
   aAvg, bAvg,
   aCount, bCount,
   metric,
+  headerRight,
 }: {
   emoji: string; label: string;
   aLabel: string; bLabel: string;
   aAvg: number | null; bAvg: number | null;
   aCount: number; bCount: number;
   metric: string;
+  headerRight?: React.ReactNode;
 }) {
   const minData = 3;
   const enough = aCount >= minData && bCount >= minData;
@@ -138,7 +140,10 @@ function CorrelationCard({
 
   return (
     <div className="rounded p-3 flex flex-col gap-2" style={{ background: '#16213e', border: '1px solid rgba(155,137,196,0.25)' }}>
-      <div className="font-bold text-[8px] text-muted-purple uppercase tracking-widest">{emoji} {label}</div>
+      <div className="flex items-center justify-between">
+        <div className="font-bold text-[8px] text-muted-purple uppercase tracking-widest">{emoji} {label}</div>
+        {headerRight}
+      </div>
       <div className="font-body text-[9px] text-muted-purple/60 uppercase tracking-wider">{metric}</div>
       {!enough ? (
         <div className="font-body text-[12px] text-muted-purple">More data needed</div>
@@ -400,6 +405,7 @@ export function Dashboard() {
   const { expectedCycleLength: cycleLen, expectedPeriodLength: periodLen } = useSettingsStore();
   const [range, setRange] = useState(30);
   const [drivingMetric, setDrivingMetric] = useState<'mood' | 'energy' | 'regulation'>('mood');
+  const [medMetric, setMedMetric] = useState<'dex' | 'ssri'>('dex');
 
   // ── window data ──
   const cutoff = cutoffDate(range);
@@ -563,7 +569,7 @@ export function Dashboard() {
     return { mood: m, energy: e, reg: r };
   }
 
-  // Medication vs no medication (weekdays only)
+  // Medication vs no medication — DEX is weekdays only; SSRI includes all days
   const medDays: DayStat[] = [], noMedDays: DayStat[] = [];
   for (const [date, daySessions] of sessionsByDate) {
     const dr = dayRecordByDate.get(date);
@@ -571,8 +577,9 @@ export function Dashboard() {
     const stat = dayStats(daySessions);
     if (!stat) continue;
     const dow = new Date(date + 'T00:00:00').getDay();
-    if (dow === 0 || dow === 6) continue;
-    if (dr.medicationTaken) medDays.push(stat);
+    if (medMetric === 'dex' && (dow === 0 || dow === 6)) continue;
+    const taken = medMetric === 'dex' ? dr.medicationTaken : (dr.ssriTaken ?? false);
+    if (taken) medDays.push(stat);
     else noMedDays.push(stat);
   }
 
@@ -721,7 +728,24 @@ export function Dashboard() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <CorrelationCard emoji="💊" label="Medication" aLabel="Medicated" bLabel="Unmedicated" aAvg={avgArr(pickVals(medDays))} bAvg={avgArr(pickVals(noMedDays))} aCount={pickVals(medDays).length} bCount={pickVals(noMedDays).length} metric={metricLabel} />
+              <CorrelationCard
+                emoji="💊" label="Medication"
+                aLabel={medMetric === 'dex' ? 'Medicated' : 'SSRI'}
+                bLabel={medMetric === 'dex' ? 'Unmedicated' : 'No SSRI'}
+                aAvg={avgArr(pickVals(medDays))} bAvg={avgArr(pickVals(noMedDays))}
+                aCount={pickVals(medDays).length} bCount={pickVals(noMedDays).length}
+                metric={metricLabel}
+                headerRight={
+                  <div className="flex gap-1">
+                    {(['dex', 'ssri'] as const).map(m => (
+                      <button key={m} onClick={() => setMedMetric(m)}
+                        className={`font-bold text-[8px] px-1.5 py-0.5 rounded border transition-colors ${medMetric === m ? 'text-star-gold border-star-gold/60 bg-star-gold/10' : 'text-muted-purple border-muted-purple/30 hover:text-cloud-white'}`}>
+                        {m === 'dex' ? 'DEX' : 'SSRI'}
+                      </button>
+                    ))}
+                  </div>
+                }
+              />
               <CorrelationCard emoji="🌙" label="Cycle phase" aLabel="Non-luteal" bLabel="Luteal" aAvg={avgArr(pickVals(nonLutealDays))} bAvg={avgArr(pickVals(lutealDays))} aCount={pickVals(nonLutealDays).length} bCount={pickVals(lutealDays).length} metric={metricLabel} />
               <CorrelationCard emoji="🏋️" label="Movement" aLabel="Gym days" bLabel="Rest days" aAvg={avgArr(pickVals(gymDays))} bAvg={avgArr(pickVals(noGymDays))} aCount={pickVals(gymDays).length} bCount={pickVals(noGymDays).length} metric={metricLabel} />
               <CorrelationCard emoji="🍱" label="Meals" aLabel="3 meals" bLabel="Fewer" aAvg={avgArr(pickVals(fullMealDays))} bAvg={avgArr(pickVals(fewMealDays))} aCount={pickVals(fullMealDays).length} bCount={pickVals(fewMealDays).length} metric={metricLabel} />

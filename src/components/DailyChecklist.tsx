@@ -351,6 +351,7 @@ export function DailyChecklist({ isLuteal = false }: { isLuteal?: boolean }) {
     dayRecord,
     setMedicationMorningTaken, setMedicationMorningTime,
     setMedicationArvoTaken, setMedicationArvoTime,
+    setSsriTaken, setSsriTime,
     updateMeal, setMealTime,
     setLunchBreakTaken,
     setGymToday, setGymTime,
@@ -441,6 +442,15 @@ export function DailyChecklist({ isLuteal = false }: { isLuteal?: boolean }) {
               disabled={!weekday}
               onToggle={() => setMedicationArvoTaken(!dayRecord.medicationArvoTaken)}
               onTimeChange={setMedicationArvoTime}
+            />
+            {/* SSRI — not weekday-gated; taken during luteal or any time */}
+            <MedDoseRow
+              label="SSRI"
+              checked={dayRecord.ssriTaken ?? false}
+              timeIso={dayRecord.ssriTime ?? null}
+              disabled={false}
+              onToggle={() => setSsriTaken(!(dayRecord.ssriTaken ?? false))}
+              onTimeChange={setSsriTime}
             />
           </div>
         </div>

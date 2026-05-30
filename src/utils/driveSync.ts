@@ -321,6 +321,8 @@ function mergeDayRecords(local: DayRecord, remote: DayRecord): DayRecord {
     medicationArvoTime:     win('medicationArvo')    ? remote.medicationArvoTime    : local.medicationArvoTime,
     medicationTaken:        morningTaken || arvoTaken,
     medicationTime:         win('medication') ? remote.medicationTime : local.medicationTime,
+    ssriTaken:              win('ssri') ? (remote.ssriTaken ?? false) : (local.ssriTaken ?? false),
+    ssriTime:               win('ssri') ? remote.ssriTime : local.ssriTime,
 
     meals: (['breakfast', 'lunch', 'dinner'] as const).map(pickMeal),
     lunchBreakTaken: win('lunchBreak') ? remote.lunchBreakTaken : local.lunchBreakTaken,

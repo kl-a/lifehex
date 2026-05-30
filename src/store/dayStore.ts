@@ -27,6 +27,8 @@ function defaultDayRecord(date: string): DayRecord {
     medicationMorningTime: null,
     medicationArvoTaken: false,
     medicationArvoTime: null,
+    ssriTaken: false,
+    ssriTime: null,
     meals: defaultMeals(),
     lunchBreakTaken: false,
     lunchBreakTime: null,
@@ -64,6 +66,8 @@ interface DayStore {
   setMedicationMorningTime: (iso: string) => void;
   setMedicationArvoTaken: (taken: boolean) => void;
   setMedicationArvoTime: (iso: string) => void;
+  setSsriTaken: (taken: boolean) => void;
+  setSsriTime: (iso: string) => void;
   updateMeal: (meal: 'breakfast' | 'lunch' | 'dinner', patch: Partial<MealLog>) => void;
   setMealTime: (meal: 'breakfast' | 'lunch' | 'dinner', iso: string) => void;
   setLunchBreakTaken: (taken: boolean) => void;
@@ -157,6 +161,27 @@ export const useDayStore = create<DayStore>()(
             medicationArvoTime: iso,
             updated_at: new Date().toISOString(),
             fieldUpdatedAt: stamp(s.dayRecord, 'medicationArvo'),
+          },
+        })),
+
+      setSsriTaken: (taken) =>
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            ssriTaken: taken,
+            ssriTime: taken ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'ssri'),
+          },
+        })),
+
+      setSsriTime: (iso) =>
+        set((s) => ({
+          dayRecord: {
+            ...s.dayRecord,
+            ssriTime: iso,
+            updated_at: new Date().toISOString(),
+            fieldUpdatedAt: stamp(s.dayRecord, 'ssri'),
           },
         })),
 
