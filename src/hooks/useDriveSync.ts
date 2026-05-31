@@ -4,8 +4,7 @@ import { useDriveStore } from '../store/driveStore';
 import { useDayStore } from '../store/dayStore';
 import { syncToDrive, syncFromDrive } from '../utils/driveSync';
 
-const POLL_INTERVAL_MS = 30 * 1000;       // 30 seconds — fast enough to feel real-time
-const PUSH_DELAY_SESSION_MS = 3000;
+const POLL_INTERVAL_MS = 30 * 1000;
 const PUSH_DELAY_DAY_MS = 5000;
 
 export function useDriveSync() {
@@ -15,7 +14,6 @@ export function useDriveSync() {
 
   const prevLockedRef = useRef(locked);
   const prevDayUpdatedAtRef = useRef(dayUpdatedAt);
-  const sessionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // After any sync that calls applyPayload, the dayRecord.updated_at may change.
@@ -48,15 +46,18 @@ export function useDriveSync() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Pull from Drive when page becomes visible (covers mobile app-switching)
+  // Push+pull when page becomes visible — ensures sessions saved while backgrounded
+  // are flushed to Drive the moment the user returns to the app.
+  // (iOS kills network requests for backgrounded PWAs, so the post-lock push often
+  // doesn't complete; this catches up on resume.)
   useEffect(() => {
     if (!connected) return;
     function onVisible() {
-      if (document.visibilityState === 'visible') pullOnly().catch(console.error);
+      if (document.visibilityState === 'visible') pushWithMerge().catch(console.error);
     }
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
-  }, [connected, pullOnly]);
+  }, [connected, pushWithMerge]);
 
   // Poll every 30 seconds while connected
   useEffect(() => {
@@ -65,15 +66,14 @@ export function useDriveSync() {
     return () => clearInterval(id);
   }, [connected, pullOnly]);
 
-  // Push 3 seconds after session is locked
+  // Push immediately after session is locked — locking is a deliberate one-shot action,
+  // no need to debounce. Pushing without delay minimises the window in which
+  // backgrounding the app can kill the network request before it completes.
   useEffect(() => {
     if (connected && locked && !prevLockedRef.current) {
-      sessionTimerRef.current = setTimeout(() => {
-        pushWithMerge().catch(console.error);
-      }, PUSH_DELAY_SESSION_MS);
+      pushWithMerge().catch(console.error);
     }
     prevLockedRef.current = locked;
-    return () => { if (sessionTimerRef.current) clearTimeout(sessionTimerRef.current); };
   }, [locked, connected, pushWithMerge]);
 
   // Push 5 seconds after any user-initiated checklist/day record change.
