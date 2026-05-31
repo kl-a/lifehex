@@ -106,6 +106,8 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
               const isFuture = c.date > today;
               const isSelected = iso === selectedDate;
               const phaseInfo = getCyclePhase(cycleStartISO, cycleLen, periodLen, c.date);
+              const dr = getDayRecord(iso);
+              const hadThatWasntMe = !isFuture && (dr?.thatWasntMe ?? false);
 
               let bg = '#1a1a2e';
               let border = 'rgba(155,137,196,0.2)';
@@ -130,7 +132,10 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
                     cursor: isFuture ? 'default' : 'pointer',
                   }}
                 >
-                  <span className="absolute top-1.5 left-1.5 font-bold text-[11px] text-cloud-white leading-none">{c.date.getDate()}</span>
+                  <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 leading-none">
+                    <span className="font-bold text-[11px] text-cloud-white">{c.date.getDate()}</span>
+                    {hadThatWasntMe && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#f7cac9' }} />}
+                  </span>
                   <span className="absolute top-1 right-1"><MoonIcon phase={phaseInfo.phase} size={14} ghost={isFuture} /></span>
                   {avg !== null && <span className="text-base absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">{MOOD_EMOJI(Math.round(avg))}</span>}
                   {ss.length > 0 && <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-star-gold" />}
