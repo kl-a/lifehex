@@ -136,7 +136,7 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
                 >
                   <span className="absolute top-1.5 left-1.5 flex items-center gap-0.5 leading-none">
                     <span className="font-bold text-[11px] text-cloud-white">{c.date.getDate()}</span>
-                    {hadThatWasntMe && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#f7cac9' }} />}
+                    {hadThatWasntMe && <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: '#e03b3b' }} />}
                     {hadGym && <span className="text-[9px] leading-none">🏃</span>}
                     {hadMeds && <span className="text-[9px] leading-none">💊</span>}
                   </span>
