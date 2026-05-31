@@ -189,7 +189,7 @@ function ZoneDotStrip({ range, sessions, cycles, cycleLen }: {
 
   const sessionsByDate = new Map<string, Session[]>();
   for (const s of sessions) {
-    const d = s.timestamp.slice(0, 10);
+    const d = localIsoDate(s.timestamp);
     const arr = sessionsByDate.get(d) ?? [];
     arr.push(s);
     sessionsByDate.set(d, arr);
