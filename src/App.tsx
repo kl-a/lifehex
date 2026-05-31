@@ -19,11 +19,19 @@ export default function App() {
   const { ensureToday } = useDayStore();
   useDriveSync();
 
-  // Archive yesterday and reset checklist on mount and every minute (catches midnight rollover)
+  // Archive yesterday and reset checklist on mount, every minute, and on visibility change.
+  // The interval alone isn't reliable on mobile — browsers suspend background timers,
+  // so the midnight rollover is missed. visibilitychange fires when the user returns to
+  // the app from the background, catching the new-day case on mobile.
   useEffect(() => {
     ensureToday();
     const interval = setInterval(ensureToday, 60_000);
-    return () => clearInterval(interval);
+    const onVisible = () => { if (document.visibilityState === 'visible') ensureToday(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, []);
 
   const { cycles } = useCycleStore();
