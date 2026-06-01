@@ -226,27 +226,27 @@ function ZoneDotStrip({ range, sessions, cycles, cycleLen }: {
           return (
             <React.Fragment key={date}>
               {isMonday && idx > 0 && (
-                <div style={{ width: 3, flexShrink: 0, alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: 1, height: '100%', background: 'rgba(155,137,196,0.25)' }} />
+                <div style={{ width: 6, flexShrink: 0, alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 2, height: '100%', background: 'rgba(155,137,196,0.5)', borderRadius: 1 }} />
                 </div>
               )}
               <div
                 className="flex flex-col items-center flex-1"
-                style={{ minWidth: 0, gap: 1, cursor: 'default' }}
+                style={{ minWidth: 0, gap: 2, cursor: 'default' }}
                 onMouseEnter={() => setHoveredDate(date)}
                 onMouseLeave={() => setHoveredDate(null)}
               >
                 <div
                   className="w-full rounded-sm"
                   style={{
-                    height: 10,
+                    height: 14,
                     background: barColor,
                     border: `1px solid ${barBorder}`,
                     boxShadow: isLuteal && avg !== null ? `0 0 0 1px #c9a84c` : 'none',
                     opacity: avg !== null ? 1 : 0.4,
                   }}
                 />
-                <span style={{ fontSize: 6, color: 'rgba(155,137,196,0.45)', lineHeight: 1 }}>
+                <span style={{ fontSize: 8, color: 'rgba(155,137,196,0.7)', lineHeight: 1, fontWeight: 600 }}>
                   {DAY_LABELS[dayOfWeek]}
                 </span>
               </div>
