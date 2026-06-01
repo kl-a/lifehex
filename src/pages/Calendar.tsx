@@ -112,7 +112,6 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
               const iso = localIso(c.date);
               const ss = byDate[iso] ?? [];
               const avg = ss.length ? ss.reduce((s, x) => s + x.mood, 0) / ss.length : null;
-              const zone = dominantZone(ss);
               const isToday = iso === localIso(today);
               const isFuture = c.date > today;
               const isSelected = iso === selectedDate;
