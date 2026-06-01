@@ -202,38 +202,65 @@ function ZoneDotStrip({ range, sessions, cycles, cycleLen }: {
     sessionsByDate.set(d, arr);
   }
 
+  const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
   return (
     <div className="pt-3 mt-3" style={{ borderTop: '1px solid rgba(155,137,196,0.2)' }}>
       <div className="font-bold text-[8px] text-muted-purple uppercase tracking-widest mb-2">Zone per day</div>
-      <div className="flex gap-px items-center" style={{ height: 20 }}>
-        {dates.map(date => {
+      <div className="flex items-end" style={{ gap: 1 }}>
+        {dates.map((date, idx) => {
           const daySessions = sessionsByDate.get(date) ?? [];
-          const zone = dominantZone(daySessions);
+          const avg = daySessions.length ? daySessions.reduce((a, s) => a + s.mood, 0) / daySessions.length : null;
           const isLuteal = isLutealForDate(date, cycles, cycleLen);
-          const color = zone ? zoneColor(zone) : 'rgba(22,33,62,0.9)';
+          const dayOfWeek = new Date(date + 'T00:00:00').getDay();
+          const isMonday = dayOfWeek === 1;
+
+          let barColor = 'rgba(22,33,62,0.9)';
+          let barBorder = 'rgba(155,137,196,0.2)';
+          if (avg !== null) {
+            if (avg >= 7) { barColor = '#b5ead7'; barBorder = '#6aab90'; }
+            else if (avg >= 4) { barColor = '#ffeaa7'; barBorder = '#c9a84c'; }
+            else { barColor = '#f7cac9'; barBorder = '#c98a88'; }
+          }
+
           return (
-            <div
-              key={date}
-              className="flex-1 rounded-sm cursor-default"
-              style={{
-                height: 10,
-                background: color,
-                border: zone ? `1px solid ${color}` : '1px solid rgba(155,137,196,0.2)',
-                boxShadow: isLuteal && zone ? `0 0 0 1px #c9a84c` : 'none',
-                opacity: zone ? 1 : 0.4,
-              }}
-              onMouseEnter={() => setHoveredDate(date)}
-              onMouseLeave={() => setHoveredDate(null)}
-            />
+            <React.Fragment key={date}>
+              {isMonday && idx > 0 && (
+                <div style={{ width: 3, flexShrink: 0, alignSelf: 'stretch', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 1, height: '100%', background: 'rgba(155,137,196,0.25)' }} />
+                </div>
+              )}
+              <div
+                className="flex flex-col items-center flex-1"
+                style={{ minWidth: 0, gap: 1, cursor: 'default' }}
+                onMouseEnter={() => setHoveredDate(date)}
+                onMouseLeave={() => setHoveredDate(null)}
+              >
+                <div
+                  className="w-full rounded-sm"
+                  style={{
+                    height: 10,
+                    background: barColor,
+                    border: `1px solid ${barBorder}`,
+                    boxShadow: isLuteal && avg !== null ? `0 0 0 1px #c9a84c` : 'none',
+                    opacity: avg !== null ? 1 : 0.4,
+                  }}
+                />
+                <span style={{ fontSize: 6, color: 'rgba(155,137,196,0.45)', lineHeight: 1 }}>
+                  {DAY_LABELS[dayOfWeek]}
+                </span>
+              </div>
+            </React.Fragment>
           );
         })}
       </div>
       <div className="font-body text-[10px] text-muted-purple mt-1" style={{ height: 14 }}>
         {hoveredDate && (() => {
           const daySessions = sessionsByDate.get(hoveredDate) ?? [];
-          const zone = dominantZone(daySessions) ?? 'no data';
+          const avg = daySessions.length ? daySessions.reduce((a, s) => a + s.mood, 0) / daySessions.length : null;
+          const zoneLabel = avg === null ? 'no data' : avg >= 7 ? 'green' : avg >= 4 ? 'amber' : 'red';
           const fmt = new Date(hoveredDate + 'T00:00:00').toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-          return <span>{fmt} · {zone}{daySessions.length ? ` · ${daySessions.length} session${daySessions.length !== 1 ? 's' : ''}` : ''}</span>;
+          return <span>{fmt} · {zoneLabel}{avg !== null ? ` · avg mood ${avg.toFixed(1)} · ${daySessions.length} session${daySessions.length !== 1 ? 's' : ''}` : ''}</span>;
         })()}
       </div>
     </div>

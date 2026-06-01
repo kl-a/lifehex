@@ -124,9 +124,11 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
 
               let bg = '#1a1a2e';
               let border = 'rgba(155,137,196,0.2)';
-              if (zone === 'green') { bg = 'rgba(181,234,215,0.25)'; border = '#6aab90'; }
-              else if (zone === 'amber') { bg = 'rgba(255,234,167,0.25)'; border = '#c9a84c'; }
-              else if (zone === 'red') { bg = 'rgba(247,202,201,0.25)'; border = '#c98a88'; }
+              if (avg !== null) {
+                if (avg >= 7) { bg = 'rgba(181,234,215,0.25)'; border = '#6aab90'; }
+                else if (avg >= 4) { bg = 'rgba(255,234,167,0.25)'; border = '#c9a84c'; }
+                else { bg = 'rgba(247,202,201,0.25)'; border = '#c98a88'; }
+              }
 
               return (
                 <div
