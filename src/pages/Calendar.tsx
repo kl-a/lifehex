@@ -4,7 +4,11 @@ import { PageHeader } from '../components/PageHeader';
 import { useHistoryStore } from '../store/historyStore';
 import { useDayStore } from '../store/dayStore';
 import { useDayHistoryStore } from '../store/dayHistoryStore';
-import { getCyclePhase, isoDate, PHASE_COLORS } from '../utils/cyclePredictor';
+import { getCyclePhase, PHASE_COLORS } from '../utils/cyclePredictor';
+
+function localIso(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 import { MOOD_EMOJI } from '../data/constants';
 import type { Session, DayRecord, CyclePhase } from '../types';
 
@@ -29,7 +33,7 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
 
   const byDate: Record<string, Session[]> = {};
   for (const s of sessions) {
-    const k = s.timestamp.slice(0, 10);
+    const k = localIso(new Date(s.timestamp));
     (byDate[k] = byDate[k] || []).push(s);
   }
 
@@ -47,7 +51,7 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
   const monthAvg = monthSessions.length
     ? (monthSessions.reduce((a, b) => a + b.mood, 0) / monthSessions.length).toFixed(1)
     : '—';
-  const daysLogged = new Set(monthSessions.map((s) => s.timestamp.slice(0, 10))).size;
+  const daysLogged = new Set(monthSessions.map((s) => localIso(new Date(s.timestamp)))).size;
 
   function getDayRecord(date: string): DayRecord | null {
     if (date === todayRecord.date) return todayRecord;
@@ -99,10 +103,10 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
           <div className="grid grid-cols-7 gap-1">
             {cells.map((c, i) => {
               if ('empty' in c) return <div key={i} style={{ height: 72 }} />;
-              const iso = isoDate(c.date);
+              const iso = localIso(c.date);
               const ss = byDate[iso] ?? [];
               const avg = ss.length ? ss.reduce((s, x) => s + x.mood, 0) / ss.length : null;
-              const isToday = iso === isoDate(today);
+              const isToday = iso === localIso(today);
               const isFuture = c.date > today;
               const isSelected = iso === selectedDate;
               const phaseInfo = getCyclePhase(cycleStartISO, cycleLen, periodLen, c.date);
