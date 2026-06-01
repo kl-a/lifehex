@@ -60,11 +60,11 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
 
   function dominantZone(ss: Session[]): 'green' | 'amber' | 'red' | null {
     if (!ss.length) return null;
-    const counts = { green: 0, amber: 0, red: 0 };
-    for (const s of ss) counts[s.confirmedZone]++;
-    if (counts.red >= counts.green && counts.red >= counts.amber) return 'red';
-    if (counts.amber >= counts.green) return 'amber';
-    return 'green';
+    const priority = { red: 2, amber: 1, green: 0 } as const;
+    return ss.reduce((best, s) =>
+      priority[s.confirmedZone] > priority[best] ? s.confirmedZone : best,
+      'green' as 'green' | 'amber' | 'red'
+    );
   }
 
   const selectedSessions = selectedDate ? (byDate[selectedDate] ?? []) : [];
@@ -106,6 +106,7 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
               const iso = localIso(c.date);
               const ss = byDate[iso] ?? [];
               const avg = ss.length ? ss.reduce((s, x) => s + x.mood, 0) / ss.length : null;
+              const zone = dominantZone(ss);
               const isToday = iso === localIso(today);
               const isFuture = c.date > today;
               const isSelected = iso === selectedDate;
@@ -117,11 +118,9 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
 
               let bg = '#1a1a2e';
               let border = 'rgba(155,137,196,0.2)';
-              if (avg !== null) {
-                if (avg >= 7) { bg = 'rgba(181,234,215,0.25)'; border = '#6aab90'; }
-                else if (avg >= 4) { bg = 'rgba(255,234,167,0.25)'; border = '#c9a84c'; }
-                else { bg = 'rgba(247,202,201,0.25)'; border = '#c98a88'; }
-              }
+              if (zone === 'green') { bg = 'rgba(181,234,215,0.25)'; border = '#6aab90'; }
+              else if (zone === 'amber') { bg = 'rgba(255,234,167,0.25)'; border = '#c9a84c'; }
+              else if (zone === 'red') { bg = 'rgba(247,202,201,0.25)'; border = '#c98a88'; }
 
               return (
                 <div
