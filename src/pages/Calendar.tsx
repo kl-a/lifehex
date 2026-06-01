@@ -111,7 +111,9 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
               if ('empty' in c) return <div key={i} style={{ height: 72 }} />;
               const iso = localIso(c.date);
               const ss = byDate[iso] ?? [];
-              const avg = ss.length ? ss.reduce((s, x) => s + x.mood, 0) / ss.length : null;
+              const avgMood = ss.length ? ss.reduce((a, x) => a + x.mood, 0) / ss.length : null;
+              const avgEnergy = ss.length ? ss.reduce((a, x) => a + x.energy, 0) / ss.length : null;
+              const avgReg = ss.length ? ss.reduce((a, x) => a + x.emotionalRegulation, 0) / ss.length : null;
               const isToday = iso === localIso(today);
               const isFuture = c.date > today;
               const isSelected = iso === selectedDate;
@@ -123,9 +125,9 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
 
               let bg = '#1a1a2e';
               let border = 'rgba(155,137,196,0.2)';
-              if (avg !== null) {
-                if (avg >= 7) { bg = 'rgba(181,234,215,0.25)'; border = '#6aab90'; }
-                else if (avg >= 4) { bg = 'rgba(255,234,167,0.25)'; border = '#c9a84c'; }
+              if (avgMood !== null) {
+                if (avgMood >= 7) { bg = 'rgba(181,234,215,0.25)'; border = '#6aab90'; }
+                else if (avgMood >= 4) { bg = 'rgba(255,234,167,0.25)'; border = '#c9a84c'; }
                 else { bg = 'rgba(247,202,201,0.25)'; border = '#c98a88'; }
               }
 
@@ -151,8 +153,13 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
                     {hadMeds && <span className="text-[9px] leading-none">💊</span>}
                   </span>
                   <span className="absolute top-1 right-1"><MoonIcon phase={phaseInfo.phase} size={14} ghost={isFuture} /></span>
-                  {avg !== null && <span className="text-base absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">{MOOD_EMOJI(Math.round(avg))}</span>}
-                  {ss.length > 0 && <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-star-gold" />}
+                  {avgMood !== null && (
+                    <div className="absolute bottom-1.5 inset-x-1.5 flex justify-between items-center">
+                      <span style={{ fontSize: 9, color: '#ffe066', fontWeight: 700 }}>{MOOD_EMOJI(Math.round(avgMood))} {avgMood.toFixed(1)}</span>
+                      <span style={{ fontSize: 9, color: '#b5ead7', fontWeight: 700 }}>⚡{avgEnergy!.toFixed(1)}</span>
+                      <span style={{ fontSize: 9, color: '#c9b8f0', fontWeight: 700 }}>🧘{avgReg!.toFixed(1)}</span>
+                    </div>
+                  )}
                 </div>
               );
             })}
