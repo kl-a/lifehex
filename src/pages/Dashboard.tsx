@@ -52,13 +52,19 @@ function addDaysToIso(iso: string, n: number): string {
   return isoDate(d);
 }
 
+function sessionZone(s: Session): 'green' | 'amber' | 'red' {
+  if (s.confirmedZone === 'green' || s.confirmedZone === 'amber' || s.confirmedZone === 'red') return s.confirmedZone;
+  if (s.systemZone === 'green' || s.systemZone === 'amber' || s.systemZone === 'red') return s.systemZone;
+  return s.mood >= 7 ? 'green' : s.mood >= 4 ? 'amber' : 'red';
+}
+
 function dominantZone(sessions: Session[]): 'green' | 'amber' | 'red' | null {
   if (!sessions.length) return null;
   const priority = { red: 2, amber: 1, green: 0 } as const;
-  return sessions.reduce((best, s) =>
-    priority[s.confirmedZone] > priority[best] ? s.confirmedZone : best,
-    'green' as 'green' | 'amber' | 'red'
-  );
+  return sessions.reduce((best, s) => {
+    const z = sessionZone(s);
+    return priority[z] > priority[best] ? z : best;
+  }, 'green' as 'green' | 'amber' | 'red');
 }
 
 function zoneColor(zone: 'green' | 'amber' | 'red' | null): string {
@@ -94,8 +100,9 @@ function zoneStreakFromSessions(sessions: Session[]): { count: number; zone: 'gr
   for (const s of sessions) {
     const d = s.timestamp.slice(0, 10);
     const existing = dateZoneMap.get(d);
-    if (!existing || priority[s.confirmedZone] > priority[existing]) {
-      dateZoneMap.set(d, s.confirmedZone);
+    const z = sessionZone(s);
+    if (!existing || priority[z] > priority[existing]) {
+      dateZoneMap.set(d, z);
     }
   }
   const todayStr = isoDate(new Date());

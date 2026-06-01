@@ -58,13 +58,19 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
     return historyRecords.find((r) => r.date === date) ?? null;
   }
 
+  function sessionZone(s: Session): 'green' | 'amber' | 'red' {
+    if (s.confirmedZone === 'green' || s.confirmedZone === 'amber' || s.confirmedZone === 'red') return s.confirmedZone;
+    if (s.systemZone === 'green' || s.systemZone === 'amber' || s.systemZone === 'red') return s.systemZone;
+    return s.mood >= 7 ? 'green' : s.mood >= 4 ? 'amber' : 'red';
+  }
+
   function dominantZone(ss: Session[]): 'green' | 'amber' | 'red' | null {
     if (!ss.length) return null;
     const priority = { red: 2, amber: 1, green: 0 } as const;
-    return ss.reduce((best, s) =>
-      priority[s.confirmedZone] > priority[best] ? s.confirmedZone : best,
-      'green' as 'green' | 'amber' | 'red'
-    );
+    return ss.reduce((best, s) => {
+      const z = sessionZone(s);
+      return priority[z] > priority[best] ? z : best;
+    }, 'green' as 'green' | 'amber' | 'red');
   }
 
   const selectedSessions = selectedDate ? (byDate[selectedDate] ?? []) : [];
@@ -220,7 +226,7 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
                   <div className="flex flex-col gap-1.5">
                     {selectedSessions.map((s) => {
                       const t = new Date(s.timestamp).toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: false });
-                      const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[s.confirmedZone];
+                      const zc = { green: '#b5ead7', amber: '#ffeaa7', red: '#f7cac9' }[sessionZone(s)];
                       return (
                         <div key={s.id} className="flex items-center gap-2 px-2 py-1.5 rounded" style={{ background: 'rgba(155,137,196,0.08)', border: '1px solid rgba(155,137,196,0.2)' }}>
                           <span className="font-body font-bold text-[11px] text-cloud-white flex-shrink-0">{t}</span>
