@@ -3,7 +3,7 @@ import { MoonIcon } from '../components/MoonIcon';
 import { PageHeader } from '../components/PageHeader';
 import { useHistoryStore } from '../store/historyStore';
 import { useDayStore } from '../store/dayStore';
-import { useDayHistoryStore } from '../store/dayHistoryStore';
+import { useDayHistoryStore, createDefaultDayRecord } from '../store/dayHistoryStore';
 import { getCyclePhase, PHASE_COLORS } from '../utils/cyclePredictor';
 
 function localIso(d: Date): string {
@@ -20,8 +20,8 @@ interface Props {
 
 export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
   const { sessions } = useHistoryStore();
-  const { dayRecord: todayRecord } = useDayStore();
-  const { dayRecords: historyRecords } = useDayHistoryStore();
+  const { dayRecord: todayRecord, setMedicationMorningTaken, setMedicationArvoTaken, setSsriTaken, updateMeal, setGymToday, setAloneTimeToday, setThatWasntMe } = useDayStore();
+  const { dayRecords: historyRecords, patchDayRecord } = useDayHistoryStore();
   const [monthOffset, setMonthOffset] = useState(0);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
@@ -58,6 +58,25 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
     return historyRecords.find((r) => r.date === date) ?? null;
   }
 
+  const todayIso = localIso(new Date());
+
+  function patchRecord(date: string, patch: Partial<DayRecord>) {
+    if (date === todayIso) {
+      // Route individual boolean fields through the live dayStore setters
+      if ('medicationMorningTaken' in patch) setMedicationMorningTaken(patch.medicationMorningTaken!);
+      if ('medicationArvoTaken'    in patch) setMedicationArvoTaken(patch.medicationArvoTaken!);
+      if ('ssriTaken'              in patch) setSsriTaken(patch.ssriTaken!);
+      if ('meals'                  in patch) {
+        for (const m of patch.meals!) updateMeal(m.meal, { logged: m.logged });
+      }
+      if ('gymToday'       in patch) setGymToday(patch.gymToday!);
+      if ('aloneTimeToday' in patch) setAloneTimeToday(patch.aloneTimeToday!);
+      if ('thatWasntMe'    in patch) setThatWasntMe(patch.thatWasntMe!);
+    } else {
+      patchDayRecord(date, patch);
+    }
+  }
+
   function sessionZone(s: Session): 'green' | 'amber' | 'red' {
     if (s.confirmedZone === 'green' || s.confirmedZone === 'amber' || s.confirmedZone === 'red') return s.confirmedZone;
     if (s.systemZone === 'green' || s.systemZone === 'amber' || s.systemZone === 'red') return s.systemZone;
@@ -79,6 +98,7 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
     : null;
   const selectedDayRecord = selectedDate ? getDayRecord(selectedDate) : null;
   const selectedZone = dominantZone(selectedSessions);
+  const isFutureSelected = selectedDate ? new Date(selectedDate + 'T00:00:00') > today : false;
 
   return (
     <div className="flex flex-col gap-3 pb-4 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 80px)' }}>
@@ -249,24 +269,15 @@ export function Calendar({ cycleStartISO, cycleLen, periodLen }: Props) {
                 )}
               </div>
 
-              {/* Checklist summary */}
-              {selectedDayRecord && (
+              {/* Checklist — editable */}
+              {selectedDate && !isFutureSelected && (
                 <div>
                   <div className="text-[8px] font-bold uppercase tracking-widest text-star-gold mb-2">Checklist</div>
-                  <div className="flex flex-wrap gap-x-3 gap-y-1.5 font-body text-[12px]">
-                    <span style={{ color: selectedDayRecord.medicationTaken ? '#b5ead7' : 'rgba(155,137,196,0.5)' }}>
-                      💊 {selectedDayRecord.medicationTaken ? '✓' : '✗'}
-                    </span>
-                    <span style={{ color: selectedDayRecord.meals.filter((m) => m.logged).length > 0 ? '#b5ead7' : 'rgba(155,137,196,0.5)' }}>
-                      🍱 {selectedDayRecord.meals.filter((m) => m.logged).length}/3
-                    </span>
-                    <span style={{ color: selectedDayRecord.gymToday ? '#b5ead7' : 'rgba(155,137,196,0.5)' }}>
-                      🏋️ {selectedDayRecord.gymToday ? '✓' : '✗'}
-                    </span>
-                    <span style={{ color: selectedDayRecord.aloneTimeToday ? '#b5ead7' : 'rgba(155,137,196,0.5)' }}>
-                      🧘 {selectedDayRecord.aloneTimeToday ? '✓' : '✗'}
-                    </span>
-                  </div>
+                  <ChecklistEditor
+                    record={selectedDayRecord}
+                    date={selectedDate}
+                    onPatch={(patch) => patchRecord(selectedDate, patch)}
+                  />
                 </div>
               )}
 
@@ -302,6 +313,75 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
     <div>
       <div className={`font-bold text-[20px] ${color}`}>{value}</div>
       <div className="font-bold text-[6px] text-lilac-shadow mt-1 uppercase tracking-wide">{label}</div>
+    </div>
+  );
+}
+
+function Toggle({ on, label, onToggle }: { on: boolean; label: string; onToggle: () => void }) {
+  return (
+    <button
+      onClick={onToggle}
+      className="flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold transition-colors"
+      style={{
+        background: on ? 'rgba(181,234,215,0.15)' : 'rgba(155,137,196,0.08)',
+        border: `1px solid ${on ? '#6aab90' : 'rgba(155,137,196,0.25)'}`,
+        color: on ? '#b5ead7' : 'rgba(155,137,196,0.6)',
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ fontSize: 9 }}>{on ? '✓' : '✗'}</span>
+    </button>
+  );
+}
+
+function ChecklistEditor({ record, date, onPatch }: {
+  record: DayRecord | null;
+  date: string;
+  onPatch: (patch: Partial<DayRecord>) => void;
+}) {
+  const r = record ?? createDefaultDayRecord(date);
+
+  function toggleMeal(idx: number) {
+    const meals = r.meals.map((m, i) => i === idx ? { ...m, logged: !m.logged } : m);
+    onPatch({ meals });
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Medication */}
+      <div>
+        <div className="text-[8px] text-muted-purple mb-1">Medication</div>
+        <div className="flex flex-wrap gap-1.5">
+          <Toggle label="💊 Morning" on={r.medicationMorningTaken} onToggle={() => onPatch({ medicationMorningTaken: !r.medicationMorningTaken, medicationTaken: !r.medicationMorningTaken || r.medicationArvoTaken })} />
+          <Toggle label="💊 Arvo" on={r.medicationArvoTaken} onToggle={() => onPatch({ medicationArvoTaken: !r.medicationArvoTaken, medicationTaken: r.medicationMorningTaken || !r.medicationArvoTaken })} />
+          <Toggle label="💊 SSRI" on={r.ssriTaken ?? false} onToggle={() => onPatch({ ssriTaken: !(r.ssriTaken ?? false) })} />
+        </div>
+      </div>
+
+      {/* Meals */}
+      <div>
+        <div className="text-[8px] text-muted-purple mb-1">Meals</div>
+        <div className="flex flex-wrap gap-1.5">
+          {r.meals.map((m, i) => (
+            <Toggle
+              key={m.meal}
+              label={m.meal === 'breakfast' ? '🍳 Brekky' : m.meal === 'lunch' ? '🥗 Lunch' : '🍽 Dinner'}
+              on={m.logged}
+              onToggle={() => toggleMeal(i)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Activity & wellbeing */}
+      <div>
+        <div className="text-[8px] text-muted-purple mb-1">Activity & Wellbeing</div>
+        <div className="flex flex-wrap gap-1.5">
+          <Toggle label="🏋️ Gym" on={r.gymToday} onToggle={() => onPatch({ gymToday: !r.gymToday })} />
+          <Toggle label="🧘 Alone time" on={r.aloneTimeToday} onToggle={() => onPatch({ aloneTimeToday: !r.aloneTimeToday })} />
+          <Toggle label='😶 "That wasn\'t me"' on={r.thatWasntMe} onToggle={() => onPatch({ thatWasntMe: !r.thatWasntMe })} />
+        </div>
+      </div>
     </div>
   );
 }
