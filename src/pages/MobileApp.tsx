@@ -274,9 +274,9 @@ function ChecklistGrid() {
       <div style={{ padding: '12px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {/* Medication — morning + arvo + SSRI */}
         {!isWeekday && (
-          <div style={{ gridColumn: 'span 2', padding: '6px 10px', borderRadius: 4, background: 'rgba(255,234,167,0.08)', border: '1px solid rgba(201,168,76,0.35)', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 14 }}>⚠️</span>
-            <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#c9a84c', lineHeight: 1.4 }}>REST DAY — you don't need DEX today, but you can still log it if you take it</span>
+          <div style={{ gridColumn: 'span 2', padding: '10px 14px', borderRadius: 4, background: 'rgba(255,234,167,0.08)', border: '1px solid rgba(201,168,76,0.35)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, textAlign: 'center' }}>
+            <span style={{ fontSize: 18 }}>⚠️</span>
+            <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#c9a84c', lineHeight: 1.6 }}>REST DAY — you don't need DEX today, but you can still log it if you take it</span>
           </div>
         )}
         <Cell emoji="💊" label="Morning" checked={dayRecord.medicationMorningTaken} iso={dayRecord.medicationMorningTime}
