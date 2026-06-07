@@ -714,7 +714,7 @@ export function Dashboard() {
                 {lutealBands.map((b, i) => (
                   <ReferenceArea key={`lut-${i}`} x1={b.x1} x2={b.x2} fill="rgba(255,234,167,0.1)" strokeOpacity={0} />
                 ))}
-                <XAxis dataKey="date" tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                <XAxis dataKey="date" tick={{ fontFamily: 'Nunito', fontSize: 9, fill: '#7a6fa0', angle: -90, textAnchor: 'end', dominantBaseline: 'auto' }} tickLine={false} axisLine={false} interval={0} height={52} />
                 <YAxis domain={[1, 10]} tick={{ fontFamily: 'Nunito', fontSize: 10, fill: '#7a6fa0' }} tickLine={false} axisLine={false} ticks={[1, 5, 10]} />
                 <Tooltip
                   contentStyle={{ background: '#16213e', border: '1px solid rgba(155,137,196,0.4)', borderRadius: 4, fontFamily: 'Nunito', fontSize: 12 }}
