@@ -379,7 +379,7 @@ function ChecklistEditor({ record, date, onPatch }: {
         <div className="flex flex-wrap gap-1.5">
           <Toggle label="🏋️ Gym" on={r.gymToday} onToggle={() => onPatch({ gymToday: !r.gymToday })} />
           <Toggle label="🧘 Alone time" on={r.aloneTimeToday} onToggle={() => onPatch({ aloneTimeToday: !r.aloneTimeToday })} />
-          <Toggle label='😶 "That wasn\'t me"' on={r.thatWasntMe} onToggle={() => onPatch({ thatWasntMe: !r.thatWasntMe })} />
+          <Toggle label={`😶 "That wasn't me"`} on={r.thatWasntMe} onToggle={() => onPatch({ thatWasntMe: !r.thatWasntMe })} />
         </div>
       </div>
     </div>
