@@ -430,7 +430,7 @@ export function DailyChecklist({ isLuteal = false }: { isLuteal?: boolean }) {
               label="Morning"
               checked={dayRecord.medicationMorningTaken}
               timeIso={dayRecord.medicationMorningTime}
-              disabled={!weekday}
+              disabled={false}
               onToggle={() => setMedicationMorningTaken(!dayRecord.medicationMorningTaken)}
               onTimeChange={setMedicationMorningTime}
             />
@@ -439,7 +439,7 @@ export function DailyChecklist({ isLuteal = false }: { isLuteal?: boolean }) {
               label="Arvo"
               checked={dayRecord.medicationArvoTaken}
               timeIso={dayRecord.medicationArvoTime}
-              disabled={!weekday}
+              disabled={false}
               onToggle={() => setMedicationArvoTaken(!dayRecord.medicationArvoTaken)}
               onTimeChange={setMedicationArvoTime}
             />

@@ -201,12 +201,13 @@ function StatusBar({ phaseInfo, periodLen, hasCycle, zone, zoneReasons, onZoneTa
 type ClockTarget =
   | { kind: 'medicationMorning' }
   | { kind: 'medicationArvo' }
+  | { kind: 'medicationSsri' }
   | { kind: 'meal'; id: 'breakfast' | 'lunch' | 'dinner' }
   | { kind: 'gym' }
   | { kind: 'alone' };
 
 function ChecklistGrid() {
-  const { dayRecord, setMedicationMorningTaken, setMedicationMorningTime, setMedicationArvoTaken, setMedicationArvoTime, updateMeal, setMealTime, setGymToday, setGymTime, setAloneTimeToday, setAloneTimeStart } = useDayStore();
+  const { dayRecord, setMedicationMorningTaken, setMedicationMorningTime, setMedicationArvoTaken, setMedicationArvoTime, setSsriTaken, setSsriTime, updateMeal, setMealTime, setGymToday, setGymTime, setAloneTimeToday, setAloneTimeStart } = useDayStore();
   const [clockTarget, setClockTarget] = useState<ClockTarget | null>(null);
   const [timeInput, setTimeInput] = useState('');
   const isWeekday = new Date().getDay() >= 1 && new Date().getDay() <= 5;
@@ -226,6 +227,7 @@ function ChecklistGrid() {
     const iso = d.toISOString();
     if (clockTarget.kind === 'medicationMorning') setMedicationMorningTime(iso);
     else if (clockTarget.kind === 'medicationArvo') setMedicationArvoTime(iso);
+    else if (clockTarget.kind === 'medicationSsri') setSsriTime(iso);
     else if (clockTarget.kind === 'meal') setMealTime(clockTarget.id, iso);
     else if (clockTarget.kind === 'gym') setGymTime(iso);
     else setAloneTimeStart(iso);
@@ -270,23 +272,19 @@ function ChecklistGrid() {
   return (
     <>
       <div style={{ padding: '12px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        {/* Medication — morning + arvo */}
-        {!isWeekday ? (
-          <div style={{ ...cellStyle(false), opacity: 0.4, cursor: 'default', pointerEvents: 'none', gridColumn: 'span 2' }}>
-            <span style={{ fontSize: 20 }}>💊</span>
-            <div>
-              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 11, color: '#c0b2e0' }}>Medication</div>
-              <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#a096c8', marginTop: 2 }}>REST DAY</div>
-            </div>
+        {/* Medication — morning + arvo + SSRI */}
+        {!isWeekday && (
+          <div style={{ gridColumn: 'span 2', padding: '6px 10px', borderRadius: 4, background: 'rgba(255,234,167,0.08)', border: '1px solid rgba(201,168,76,0.35)', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 14 }}>⚠️</span>
+            <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#c9a84c', lineHeight: 1.4 }}>REST DAY — you don't need DEX today, but you can still log it if you take it</span>
           </div>
-        ) : (
-          <>
-            <Cell emoji="💊" label="Morning" checked={dayRecord.medicationMorningTaken} iso={dayRecord.medicationMorningTime}
-              onToggle={() => setMedicationMorningTaken(!dayRecord.medicationMorningTaken)} clockT={{ kind: 'medicationMorning' }} />
-            <Cell emoji="💊" label="Arvo" checked={dayRecord.medicationArvoTaken} iso={dayRecord.medicationArvoTime}
-              onToggle={() => setMedicationArvoTaken(!dayRecord.medicationArvoTaken)} clockT={{ kind: 'medicationArvo' }} />
-          </>
         )}
+        <Cell emoji="💊" label="Morning" checked={dayRecord.medicationMorningTaken} iso={dayRecord.medicationMorningTime}
+          onToggle={() => setMedicationMorningTaken(!dayRecord.medicationMorningTaken)} clockT={{ kind: 'medicationMorning' }} />
+        <Cell emoji="💊" label="Arvo" checked={dayRecord.medicationArvoTaken} iso={dayRecord.medicationArvoTime}
+          onToggle={() => setMedicationArvoTaken(!dayRecord.medicationArvoTaken)} clockT={{ kind: 'medicationArvo' }} />
+        <Cell emoji="💊" label="SSRI" checked={dayRecord.ssriTaken ?? false} iso={dayRecord.ssriTime ?? null}
+          onToggle={() => setSsriTaken(!(dayRecord.ssriTaken ?? false))} clockT={{ kind: 'medicationSsri' }} />
 
         <Cell emoji="🍳" label="Breakfast" checked={meal('breakfast').logged} iso={meal('breakfast').loggedTime}
           onToggle={() => updateMeal('breakfast', { logged: !meal('breakfast').logged, loggedTime: !meal('breakfast').logged ? new Date().toISOString() : null })}
