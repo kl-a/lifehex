@@ -269,7 +269,7 @@ function ZoneDotStrip({ range, sessions, cycles, cycleLen }: {
 
 // ─── cycle pattern strip ─────────────────────────────────────────────────────
 
-function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
+function CyclePatternStrip({ cyclePos, compact = false }: { cyclePos: number; compact?: boolean }) {
   const { sessions } = useHistoryStore();
   const { dayRecords } = useDayHistoryStore();
   const { dayRecord } = useDayStore();
@@ -332,34 +332,32 @@ function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
   ];
 
   return (
-    <div className="card-indigo flex-shrink-0 flex flex-col gap-2">
-      <div>
+    <div className={`card-indigo flex-shrink-0 flex flex-col ${compact ? 'gap-1.5' : 'gap-2'}`}>
+      <div className="flex items-baseline justify-between gap-2">
         <div className="font-bold text-[9px] uppercase tracking-widest text-star-gold">Your Cycle Pattern</div>
-        <div className="font-body text-[11px] text-muted-purple mt-0.5">
-          Average across all logged cycles · {cycles.length} cycle{cycles.length !== 1 ? 's' : ''}
-        </div>
+        <div className="font-body text-[10px] text-muted-purple">{cycles.length} cycle{cycles.length !== 1 ? 's' : ''}</div>
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-4">
+      {/* Legend — condensed in compact mode */}
+      <div className="flex gap-3 flex-wrap">
         {[
-          { color: 'rgba(181,234,215,0.7)', border: '#6aab90', label: 'Avg mood ≥ 7' },
+          { color: 'rgba(181,234,215,0.7)', border: '#6aab90', label: '≥ 7' },
           { color: 'rgba(255,234,167,0.7)', border: '#c9a84c', label: '4–6.9' },
           { color: 'rgba(247,202,201,0.7)', border: '#c98a88', label: '< 4' },
         ].map(l => (
-          <div key={l.label} className="flex items-center gap-1.5">
-            <div className="w-3 h-3 rounded-sm" style={{ background: l.color, border: `1px solid ${l.border}` }} />
-            <span className="font-body text-[10px] text-muted-purple">{l.label}</span>
+          <div key={l.label} className="flex items-center gap-1">
+            <div className="w-2.5 h-2.5 rounded-sm" style={{ background: l.color, border: `1px solid ${l.border}` }} />
+            <span className="font-body text-[9px] text-muted-purple">{l.label}</span>
           </div>
         ))}
-        <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-sm" style={{ border: '2px solid #ffe066' }} />
-          <span className="font-body text-[10px] text-muted-purple">Today</span>
+        <div className="flex items-center gap-1">
+          <div className="w-2.5 h-2.5 rounded-sm" style={{ border: '2px solid #ffe066' }} />
+          <span className="font-body text-[9px] text-muted-purple">Today</span>
         </div>
       </div>
 
       {/* Phase labels */}
-      <div className="relative" style={{ height: 16 }}>
+      <div className="relative" style={{ height: 14 }}>
         {PHASE_LABELS.map(p => {
           const leftPct = ((p.from - 1) / 28) * 100;
           const widthPct = ((p.to - p.from + 1) / 28) * 100;
@@ -382,7 +380,7 @@ function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
             <div key={day} className="flex-1 flex flex-col items-center gap-0.5"
               onMouseEnter={() => setHoveredDay(day)} onMouseLeave={() => setHoveredDay(null)}>
               <div className="w-full rounded-sm" style={{
-                height: 24,
+                height: compact ? 16 : 24,
                 background: moodFill(avg),
                 border: isToday ? '2px solid #ffe066' : moodBorder(avg),
                 boxShadow: isToday ? '0 0 6px rgba(255,224,102,0.5)' : 'none',
@@ -397,13 +395,13 @@ function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
 
       {/* "That wasn't me" strip */}
       <div>
-        <div className="font-body text-[10px] text-muted-purple mb-1">that wasn't me</div>
+        <div className="font-body text-[9px] text-muted-purple mb-1">that wasn't me</div>
         <div className="flex gap-0.5">
           {Array.from({ length: 28 }, (_, i) => {
             const day = i + 1;
             return (
               <div key={day} className="flex-1 rounded-sm" style={{
-                height: 14,
+                height: compact ? 10 : 14,
                 background: flagsByDay.has(day) ? 'rgba(247,202,201,0.6)' : 'transparent',
                 border: flagsByDay.has(day) ? '1px solid #c98a88' : '1px solid rgba(155,137,196,0.12)',
               }} />
@@ -413,14 +411,14 @@ function CyclePatternStrip({ cyclePos }: { cyclePos: number }) {
       </div>
 
       {/* Hover tooltip — fixed height */}
-      <div className="font-body text-[11px] text-center" style={{ height: 16 }}>
+      <div className="font-body text-[10px] text-center" style={{ height: 14 }}>
         {hoveredDay !== null && (() => {
           const avg = avgMood(hoveredDay);
           const count = moodsByDay.get(hoveredDay)?.length ?? 0;
           const flags = flagsByDay.has(hoveredDay) ? 1 : 0;
           return (
             <span className="text-muted-purple">
-              Day {hoveredDay} · {avg !== null ? `Avg mood ${avg.toFixed(1)}` : 'No data'} · {count} session{count !== 1 ? 's' : ''}{flags ? ' · 1 flag' : ''}
+              Day {hoveredDay} · {avg !== null ? `avg ${avg.toFixed(1)}` : 'no data'} · {count} session{count !== 1 ? 's' : ''}{flags ? ' · flagged' : ''}
             </span>
           );
         })()}
@@ -741,12 +739,11 @@ export function Dashboard() {
           <ZoneDotStrip range={range} sessions={inRange} cycles={cycles} cycleLen={cycleLen} />
         </div>
 
-        {/* Cycle pattern strip under feeling chart */}
-        <CyclePatternStrip cyclePos={phaseInfo.cyclePos} />
         </div>
 
-        {/* RIGHT: Correlation cards + Balance drift radar */}
+        {/* RIGHT: Cycle pattern + Correlation cards + Balance drift radar */}
         <div className="flex flex-col gap-2 min-h-0">
+          <CyclePatternStrip cyclePos={phaseInfo.cyclePos} compact />
 
           {/* Correlation cards 2×2 */}
           <div className="card-indigo flex-shrink-0">
