@@ -77,18 +77,18 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
         activity: '...',
       });
       count++;
-      if (count >= 7) {
+      if (count >= 9) {
         clearInterval(interval);
         setResult(spin(lowestDimension));
         setIsSpinning(false);
       }
-    }, 80);
+    }, 150);
   }
 
   const showResult = result && !dismissed;
 
   return (
-    <div>
+    <div style={{ minHeight: 110 }}>
       <AnimatePresence mode="wait">
         {!showResult ? (
           <motion.button
@@ -99,14 +99,20 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
             onClick={handleSpin}
             style={{
               width: '100%',
+              height: 110,
               padding: '10px 14px',
               background: '#16213e',
               border: '2px solid #9b89c4',
               borderRadius: 4,
               boxShadow: '3px 3px 0px #7a6fa0',
               cursor: 'pointer',
-              textAlign: 'left',
+              textAlign: 'center',
               transition: 'box-shadow 0.1s, transform 0.1s',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLButtonElement).style.boxShadow = '1px 1px 0px #7a6fa0';
@@ -117,10 +123,10 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
               (e.currentTarget as HTMLButtonElement).style.transform = 'translate(0,0)';
             }}
           >
-            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: '#c9b8f0', marginBottom: 4 }}>
+            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#c9b8f0' }}>
               🎲 SPIN FOR AN ACTIVITY
             </div>
-            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: 'rgba(155,137,196,0.7)' }}>
+            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: 'rgba(155,137,196,0.7)' }}>
               Press to get something to do right now
             </div>
           </motion.button>
@@ -132,29 +138,33 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.2 }}
             style={{
+              height: 110,
               background: hexToRgba(result.colour, 0.1),
               border: `2px solid ${result.colour}`,
               borderRadius: 4,
               boxShadow: `4px 4px 0px ${shadowFor(result.colour)}`,
               padding: '10px 12px',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
             }}
           >
             {/* Header row: label + respin + dismiss */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: result.colour }}>
                 ✦ {result.dimensionLabel}
               </span>
-              <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 12 }}>
                 <button
                   onClick={handleSpin}
                   disabled={isSpinning}
-                  style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#7a6fa0', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, opacity: isSpinning ? 0.4 : 1 }}
+                  style={{ fontSize: 20, color: '#9b89c4', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, opacity: isSpinning ? 0.4 : 1 }}
                 >
                   ↺
                 </button>
                 <button
                   onClick={() => setDismissed(true)}
-                  style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#7a6fa0', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+                  style={{ fontSize: 18, color: '#9b89c4', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}
                 >
                   ✕
                 </button>
@@ -167,8 +177,12 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
               fontSize: 14,
               fontWeight: 700,
               color: '#fdfcff',
-              lineHeight: 1.5,
-              padding: '10px 0 4px',
+              lineHeight: 1.4,
+              textAlign: 'center',
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}>
               {isSpinning ? (
                 <span style={{ color: result.colour, fontFamily: "'Press Start 2P', monospace", fontSize: 10 }}>

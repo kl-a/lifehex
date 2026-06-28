@@ -82,8 +82,8 @@ function spin(bias?: string | null): RouletteResult {
 
 When the button is pressed:
 1. Set `isSpinning: true`
-2. Run a rapid-fire cycle through 6 random dimension labels using `setInterval` at 80ms intervals — this creates a slot-machine feel showing dimension names flashing before settling
-3. After 600ms total, clear the interval, call `spin()` for the real result, set `isSpinning: false`, set `result`
+2. Run a cycle through 9 random dimension labels using `setInterval` at 150ms intervals — this creates a slot-machine feel showing dimension names flashing before settling
+3. After ~1350ms total, clear the interval, call `spin()` for the real result, set `isSpinning: false`, set `result`
 
 ```typescript
 function handleSpin() {
@@ -101,12 +101,12 @@ function handleSpin() {
       activity: '...',
     });
     count++;
-    if (count >= 7) {
+    if (count >= 9) {
       clearInterval(interval);
       setResult(spin(lowestDimension));
       setIsSpinning(false);
     }
-  }, 80);
+  }, 150);
 }
 ```
 
