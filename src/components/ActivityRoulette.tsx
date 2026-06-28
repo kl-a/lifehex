@@ -88,7 +88,7 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
   const showResult = result && !dismissed;
 
   return (
-    <div style={{ minHeight: 110 }}>
+    <div style={{ height: 56 }}>
       <AnimatePresence mode="wait">
         {!showResult ? (
           <motion.button
@@ -99,8 +99,8 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
             onClick={handleSpin}
             style={{
               width: '100%',
-              height: 110,
-              padding: '10px 14px',
+              height: 56,
+              padding: '6px 14px',
               background: '#16213e',
               border: '2px solid #9b89c4',
               borderRadius: 4,
@@ -112,7 +112,7 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: 8,
+              gap: 5,
             }}
             onMouseEnter={e => {
               (e.currentTarget as HTMLButtonElement).style.boxShadow = '1px 1px 0px #7a6fa0';
@@ -123,10 +123,10 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
               (e.currentTarget as HTMLButtonElement).style.transform = 'translate(0,0)';
             }}
           >
-            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 10, color: '#c9b8f0' }}>
+            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 9, color: '#c9b8f0' }}>
               🎲 SPIN FOR AN ACTIVITY
             </div>
-            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 13, color: 'rgba(155,137,196,0.7)' }}>
+            <div style={{ fontFamily: 'Nunito, sans-serif', fontSize: 11, color: 'rgba(155,137,196,0.7)' }}>
               Press to get something to do right now
             </div>
           </motion.button>
@@ -138,20 +138,21 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.2 }}
             style={{
-              height: 110,
+              height: 56,
               background: hexToRgba(result.colour, 0.1),
               border: `2px solid ${result.colour}`,
               borderRadius: 4,
               boxShadow: `4px 4px 0px ${shadowFor(result.colour)}`,
-              padding: '10px 12px',
+              padding: '6px 12px',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
+              overflow: 'hidden',
             }}
           >
             {/* Header row: label + respin + dismiss */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: result.colour }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: result.colour }}>
                 ✦ {result.dimensionLabel}
               </span>
               <div style={{ display: 'flex', gap: 12 }}>
@@ -174,18 +175,19 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
             {/* Activity text */}
             <div style={{
               fontFamily: 'Nunito, sans-serif',
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: 700,
               color: '#fdfcff',
-              lineHeight: 1.4,
+              lineHeight: 1.3,
               textAlign: 'center',
               flex: 1,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              overflow: 'hidden',
             }}>
               {isSpinning ? (
-                <span style={{ color: result.colour, fontFamily: "'Press Start 2P', monospace", fontSize: 10 }}>
+                <span style={{ color: result.colour, fontFamily: "'Press Start 2P', monospace", fontSize: 9 }}>
                   {result.dimensionLabel}
                 </span>
               ) : (

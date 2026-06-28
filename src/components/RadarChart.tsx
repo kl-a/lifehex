@@ -15,7 +15,7 @@ const V = 320;          // viewBox size (SVG units)
 const CX = V / 2;
 const CY = V / 2;
 const R = 104;          // outer radius of the plot
-const LABEL_R = R + 28; // radius at which labels are drawn
+const LABEL_R = R + 32; // radius at which labels are drawn
 const MAX = 10;
 const N = DIMENSIONS.length;
 const HIT_R = 22;       // pointer hit radius for handles (SVG units)
@@ -202,12 +202,12 @@ export function RadarChart({ values, locked, onAxisTap, onAxisHover, onChange, a
             />
             <text x={lx} y={ly + 4}
               textAnchor={anchor}
-              fontFamily="Nunito, sans-serif" fontWeight="700" fontSize={10}
+              fontFamily="Nunito, sans-serif" fontWeight="700" fontSize={13}
               fill={isActive ? '#ffe066' : locked ? '#9b89c4' : '#fdfcff'}
             >{d.short}</text>
-            <text x={lx} y={ly + 17}
+            <text x={lx} y={ly + 20}
               textAnchor={anchor}
-              fontFamily="Nunito, sans-serif" fontWeight="800" fontSize={13}
+              fontFamily="Nunito, sans-serif" fontWeight="800" fontSize={16}
               fill={isActive ? '#ffe066' : locked ? '#7a6fa0' : '#ffe066'}
             >{values[d.key]}</text>
           </g>
