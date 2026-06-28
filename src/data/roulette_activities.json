@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "description": "Roulette activities for each Wheel of Life dimension. Each activity is specific enough to be actionable but loose enough to not feel like a chore. Designed for immediate, low-effort engagement.",
+  "dimensions": {
+    "healthBody": {
+      "label": "Health & Body",
+      "colour": "#b5ead7",
+      "activities": [
+        "Fill a big glass of water and drink the whole thing before you do anything else.",
+        "Stand up, go outside for exactly 5 minutes, and come back. No destination needed.",
+        "Do 10 slow neck rolls — 5 each direction. You've been sitting weird.",
+        "Eat one piece of fruit or something that grew in the ground. Right now.",
+        "Set a 7-minute timer and stretch whatever feels the tightest. Just floor stretches, no routine.",
+        "Walk to the furthest point of wherever you are and walk back. That counts.",
+        "Close your eyes and take 5 breaths where the exhale is twice as long as the inhale.",
+        "Make yourself a proper meal for the next mealtime — not cereal, not toast. Something real.",
+        "Do 10 squats next to wherever you're sitting. Get it over with.",
+        "Go to bed 30 minutes earlier tonight. Decide that now, put it in your head."
+      ]
+    },
+    "mentalWellbeing": {
+      "label": "Mental & Emotional Wellbeing",
+      "colour": "#c9b8f0",
+      "activities": [
+        "Write 3 sentences about what's actually bothering you right now. Not what you think should bother you — what actually is.",
+        "Text your therapist or check when your next appointment is. If you don't have one booked, book one.",
+        "Name the emotion you're feeling right now. Not good or bad — the actual word. Sit with it for 60 seconds.",
+        "Think of one thing that happened today that wasn't terrible. Write it down somewhere.",
+        "Put on a song that matches exactly how you feel right now, not one to change the mood. Just match it.",
+        "Say out loud to yourself: 'I'm doing the best I can with what I've got right now.' Once is enough.",
+        "Write down one thing you're worried about and one concrete reason it might be okay.",
+        "Sit somewhere quiet for 4 minutes and do nothing. No phone. Just exist.",
+        "Think of someone who makes you feel calm just by existing. Send them a message.",
+        "Rate your stress from 1–10 and ask yourself: what would drop it by 2 points? Just notice the answer."
+      ]
+    },
+    "relationships": {
+      "label": "Relationships",
+      "colour": "#ffeaa7",
+      "activities": [
+        "Send a voice message to a friend instead of a text. Just say hi and something real.",
+        "Message someone you've been meaning to catch up with and actually lock in a date before you close the chat.",
+        "Send a meme or a photo to someone you care about with zero context. Just thinking of you.",
+        "Call someone on the way to or from something. Even 5 minutes counts.",
+        "Reply to someone's story or post with more than an emoji — write something actual.",
+        "Think of the friend you've been worst at keeping in touch with lately and reach out first.",
+        "Send a message to a friend that's just checking in on them — make it about them, not you.",
+        "Make a plan that you'll actually keep — dinner, a walk, anything. Put it in the calendar.",
+        "Tell someone something specific you appreciate about them. Out loud or in a message.",
+        "Look at your camera roll and find a photo with someone you love. Send it to them."
+      ]
+    },
+    "family": {
+      "label": "Family",
+      "colour": "#ffb7b2",
+      "activities": [
+        "Say good morning or goodnight to whoever is home. Actually stop and do it properly.",
+        "Ask mum or dad one question about their day and listen to the full answer.",
+        "Do one household thing that isn't yours to do without mentioning that you did it.",
+        "Sit in the same room as family for 20 minutes even if you're doing your own thing.",
+        "Make tea or a snack and bring one to someone else in the house without being asked.",
+        "Call or message a family member you haven't spoken to in a while. Doesn't have to be long.",
+        "Think of one thing a family member is going through right now and acknowledge it to them.",
+        "Look at an old family photo and let yourself feel something about it.",
+        "Do one errand or task that takes something off someone else's plate today.",
+        "Put your phone down for the next family meal and just be there."
+      ]
+    },
+    "workCareer": {
+      "label": "Work & Career",
+      "colour": "#ffe066",
+      "activities": [
+        "Pick the one thing on your to-do list that would make tomorrow feel easier and do just that.",
+        "Spend 15 minutes on a project that matters to you — not urgent, just meaningful.",
+        "Write down one thing you're proud of that you've made or shipped in the last month.",
+        "Clear your inbox or task list of anything that's been sitting there longer than 2 weeks — done, delegated, or deleted.",
+        "Spend 10 minutes learning one small thing that's directly useful to your work right now.",
+        "Write the first paragraph of something you've been putting off. Just the first one.",
+        "Identify the one task you've been avoiding the most and do 10 minutes of it. Just 10.",
+        "Sketch out what 'done' looks like for your current biggest project. Not a plan — just the picture of done.",
+        "Close all tabs that aren't related to what you're supposed to be doing right now.",
+        "Make a note of one thing you want to get better at this year. Put it somewhere you'll see it."
+      ]
+    },
+    "creativeArt": {
+      "label": "Creative Life & Art",
+      "colour": "#f7cac9",
+      "activities": [
+        "Draw a 5-minute doodle of the last person you spoke to. No erasing. Just go.",
+        "Open a sketchbook and draw the first object you see from where you're sitting. Give it 10 minutes.",
+        "Pick a colour you love and fill a page with things that are that colour. No plan, just fill it.",
+        "Try to draw something from memory — a face, a place, an object. See what comes out.",
+        "Do a 1-minute gesture drawing of your own hand in whatever position it's resting.",
+        "Write the first line of something — a story, a letter, a poem. Just one line. See where it goes.",
+        "Find a reference image of something you find beautiful and try to capture the feeling of it, not the detail.",
+        "Open a creative programming project and spend 20 minutes on it with no goal except curiosity.",
+        "Draw something you ate today. Ugly is fine. Done is the point.",
+        "Pick a technique you've been meaning to try and just attempt it badly for 15 minutes."
+      ]
+    },
+    "restRecovery": {
+      "label": "Rest & Recovery",
+      "colour": "#b5ead7",
+      "activities": [
+        "Put something on your intentional watch list — not the algorithm, something you chose — and actually watch it.",
+        "Read manga or a book for 20 minutes with your phone in another room.",
+        "Put on an album you love from start to finish and don't do anything else while it plays.",
+        "Play Animal Crossing or a low-stakes game for 30 minutes without guilt.",
+        "Go for a walk with no podcast, no music, no destination. Just look at things.",
+        "Make a hot drink, sit somewhere comfortable, and drink it slowly without your phone.",
+        "Watch one episode of something comforting that you've seen before.",
+        "Do absolutely nothing for 10 minutes. Lie on the floor if you have to. Just stop.",
+        "Run a bath or a long shower with no rush. Use the nice stuff.",
+        "Pick one thing from your 'to watch / to read / to listen to' list and start it tonight."
+      ]
+    },
+    "nourishment": {
+      "label": "Nourishment",
+      "colour": "#ffeaa7",
+      "activities": [
+        "Go somewhere alone for 30 minutes — a walk, a café, the car, anywhere. No one needs anything from you.",
+        "Put your phone on do not disturb and spend the next hour doing whatever you want with no one watching.",
+        "Play a game, watch something, or do something creative entirely for yourself with no productivity justification.",
+        "Eat a meal alone in peace — no phone, no TV, no one to talk to. Just eat.",
+        "Leave the house by yourself and go anywhere that isn't a chore. Window shopping, a walk, a drive.",
+        "Spend 20 minutes doing something completely unplanned just because you felt like it in the moment.",
+        "Book yourself a solo experience — a class, a cinema trip, a coffee alone at a place you like.",
+        "Put headphones in and listen to something only you care about for the length of a commute.",
+        "Say no to one thing today that you didn't actually want to do. Just once.",
+        "Spend an evening doing nothing that benefits anyone but yourself. Let that be enough."
+      ]
+    }
+  }
+}

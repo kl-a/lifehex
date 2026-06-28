@@ -9,6 +9,7 @@ import { RegulationBadge } from '../components/RegulationBadge';
 import { DailyChecklist } from '../components/DailyChecklist';
 import { PhysicalSymptoms } from '../components/PhysicalSymptoms';
 import { NewsTicker } from '../components/NewsTicker';
+import { ActivityRoulette } from '../components/ActivityRoulette';
 import { DIMENSIONS, DEFAULT_DIMENSIONS, MOOD_EMOJI, ENERGY_EMOJI, REGULATION_EMOJI } from '../data/constants';
 import { useSessionStore } from '../store/sessionStore';
 import { useHistoryStore } from '../store/historyStore';
@@ -407,7 +408,18 @@ export function Today({ phaseInfo, periodLen, goCycle }: Props) {
               )}
             </div>
           </div>
-          {/* State timeline — below radar, separated by divider */}
+          {/* Activity Roulette — below radar/legend, above State Today */}
+          {(() => {
+            const lowestDimensionKey = (Object.entries(displayDimensions)
+              .sort(([, a], [, b]) => a - b)[0]?.[0] ?? null) as keyof DimensionScores | null;
+            return (
+              <div className="flex-shrink-0 mt-2 pt-2 border-t border-muted-purple/20">
+                <ActivityRoulette lowestDimension={lowestDimensionKey} />
+              </div>
+            );
+          })()}
+
+          {/* State timeline — below roulette, separated by divider */}
           <div className="flex-shrink-0 mt-2 pt-2 border-t border-muted-purple/20">
             <div className="text-[9px] font-bold uppercase tracking-widest text-muted-purple mb-1">State Today</div>
             <StateTimeline sessions={[...todaySessions].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())} />

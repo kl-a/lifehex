@@ -42,7 +42,19 @@
       "Bash(find /Users/kellytsang -maxdepth 4 -name \"*v4*\" -o -name \"*LifeHex*\" -o -name \"*lifehex*\" 2>/dev/null | grep -v node_modules | grep -v \".git\")",
       "Read(//Users/kellytsang/**)",
       "Bash(xargs ls)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5176/lifehex/)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5176/lifehex/)",
+      "Bash(git branch *)",
+      "Bash(git -C /Users/kellytsang/git-repo/wheel_of_life remote get-url origin)",
+      "Bash(git -C /Users/kellytsang/git-repo/wheel_of_life status)",
+      "Bash(git -C /Users/kellytsang/git-repo/wheel_of_life diff --stat)",
+      "Bash(git -C /Users/kellytsang/git-repo/wheel_of_life push origin main)",
+      "Bash(sed -i '' \"s/'lifehex_sessions'/'selene_sessions'/g\" /Users/kellytsang/git-repo/wheel_of_life/src/store/historyStore.ts)",
+      "Bash(sed -i '' \"s/'lifehex_day_history'/'selene_day_history'/g\" /Users/kellytsang/git-repo/wheel_of_life/src/store/dayHistoryStore.ts)",
+      "Bash(sed -i '' \"s/'lifehex_cycles'/'selene_cycles'/g\" /Users/kellytsang/git-repo/wheel_of_life/src/store/cycleStore.ts)",
+      "Bash(sed -i '' \"s/'lifehex_settings'/'selene_settings'/g\" /Users/kellytsang/git-repo/wheel_of_life/src/store/settingsStore.ts)",
+      "Bash(sed -i '' \"s/'lifehex_day'/'selene_day'/g\" /Users/kellytsang/git-repo/wheel_of_life/src/store/dayStore.ts)",
+      "Bash(gh run *)",
+      "Bash(git rm *)"
     ],
     "additionalDirectories": [
       "/private/tmp"

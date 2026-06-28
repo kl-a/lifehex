@@ -14,6 +14,7 @@ import { DIMENSIONS, DEFAULT_DIMENSIONS, MOOD_EMOJI, ENERGY_EMOJI, REGULATION_EM
 import { calculateZone, getZoneReasons } from '../utils/regulationScore';
 import { getCyclePhase, isoDate } from '../utils/cyclePredictor';
 import { connectAndSync, disconnectDrive, syncToDrive, syncFromDrive } from '../utils/driveSync';
+import { ActivityRoulette } from '../components/ActivityRoulette';
 import { useDriveSync } from '../hooks/useDriveSync';
 import type { DimensionScores, Session } from '../types';
 
@@ -436,7 +437,7 @@ function SymptomsSection() {
 
 // ─── wheel of life section ────────────────────────────────────────────────────
 
-function WheelSection({ disabled, dimensions, onChange }: { disabled: boolean; dimensions: DimensionScores; onChange: (key: keyof DimensionScores, v: number) => void }) {
+function WheelSection({ disabled, dimensions, onChange, lowestDimension }: { disabled: boolean; dimensions: DimensionScores; onChange: (key: keyof DimensionScores, v: number) => void; lowestDimension?: keyof DimensionScores | null }) {
   const [open, setOpen] = useState(false);
   const summary = DIMENSIONS.map(d => `${ABBREV[d.short] ?? d.short[0]}${dimensions[d.key]}`).join(' ');
 
@@ -465,6 +466,9 @@ function WheelSection({ disabled, dimensions, onChange }: { disabled: boolean; d
                   <DimSlider value={dimensions[d.key]} onChange={v => onChange(d.key, v)} disabled={disabled} />
                 </div>
               ))}
+              <div style={{ borderTop: '1px solid rgba(155,137,196,0.2)', paddingTop: 12, marginTop: 4 }}>
+                <ActivityRoulette lowestDimension={lowestDimension} />
+              </div>
             </div>
           </motion.div>
         )}
@@ -780,7 +784,12 @@ export function MobileApp() {
 
       {/* ── Collapsible sections ── */}
       <SymptomsSection />
-      <WheelSection disabled={locked} dimensions={displayDimensions} onChange={(key, v) => setDimension(key, v)} />
+      <WheelSection
+        disabled={locked}
+        dimensions={displayDimensions}
+        onChange={(key, v) => setDimension(key, v)}
+        lowestDimension={(Object.entries(displayDimensions).sort(([, a], [, b]) => a - b)[0]?.[0] ?? null) as keyof DimensionScores | null}
+      />
 
       <div style={{ flex: 1 }} />
 
