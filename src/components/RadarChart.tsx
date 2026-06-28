@@ -39,11 +39,6 @@ function gridPoly(level: number) {
   }).join(' ');
 }
 
-function valFromPos(svgX: number, svgY: number, dimIdx: number) {
-  const a = axisAngle(dimIdx);
-  const proj = (svgX - CX) * Math.cos(a) + (svgY - CY) * Math.sin(a);
-  return Math.min(MAX, Math.max(1, Math.round((proj / R) * MAX)));
-}
 
 export function RadarChart({ values, locked, onAxisTap, onAxisHover, onChange, activeKey }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
