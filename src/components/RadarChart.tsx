@@ -15,7 +15,7 @@ const V = 320;          // viewBox size (SVG units)
 const CX = V / 2;
 const CY = V / 2;
 const R = 104;          // outer radius of the plot
-const LABEL_R = R + 22; // radius at which labels are drawn
+const LABEL_R = R + 28; // radius at which labels are drawn
 const MAX = 10;
 const N = DIMENSIONS.length;
 const HIT_R = 22;       // pointer hit radius for handles (SVG units)
@@ -47,9 +47,13 @@ function valFromPos(svgX: number, svgY: number, dimIdx: number) {
 
 export function RadarChart({ values, locked, onAxisTap, onAxisHover, onChange, activeKey }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  // Ref drives all move/up logic synchronously; state only drives visual re-render
+  const dragIdxRef = useRef<number | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   // track whether the pointer moved enough to count as a drag vs a tap
   const ptrInfo = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  // anchor for delta-based dragging: initial grab position + initial value
+  const dragAnchor = useRef<{ pos: { x: number; y: number }; value: number } | null>(null);
 
   function toSVG(clientX: number, clientY: number) {
     const el = svgRef.current;
@@ -75,36 +79,53 @@ export function RadarChart({ values, locked, onAxisTap, onAxisHover, onChange, a
       const dist = Math.hypot(p.x - hx, p.y - hy);
       if (dist < bestDist) { bestDist = dist; best = i; }
     });
+    // Store in ref immediately (no async delay) and state (drives visuals)
+    dragIdxRef.current = best;
     setDragIdx(best);
+    if (best >= 0) {
+      dragAnchor.current = { pos: p, value: values[DIMENSIONS[best].key] };
+    }
   }
 
   function onMove(e: React.PointerEvent<SVGSVGElement>) {
-    if (locked || dragIdx === null || dragIdx === -1 || !onChange || !ptrInfo.current) return;
+    const idx = dragIdxRef.current;
+    if (locked || idx === null || idx === -1 || !onChange || !ptrInfo.current || !dragAnchor.current) return;
     const p = toSVG(e.clientX, e.clientY);
     if (!ptrInfo.current.moved && Math.hypot(p.x - ptrInfo.current.x, p.y - ptrInfo.current.y) > DRAG_THRESHOLD) {
       ptrInfo.current.moved = true;
     }
     if (ptrInfo.current.moved) {
-      onChange(DIMENSIONS[dragIdx].key, valFromPos(p.x, p.y, dragIdx));
+      // Delta-based: project movement delta onto the axis direction.
+      // This works for ALL axes including horizontal REST/RELATE —
+      // dragging in any direction updates value by the component along the spoke.
+      const a = axisAngle(idx);
+      const dx = p.x - dragAnchor.current.pos.x;
+      const dy = p.y - dragAnchor.current.pos.y;
+      const deltaAlongAxis = dx * Math.cos(a) + dy * Math.sin(a);
+      const newVal = Math.min(MAX, Math.max(1, Math.round(dragAnchor.current.value + (deltaAlongAxis / R) * MAX)));
+      onChange(DIMENSIONS[idx].key, newVal);
     }
   }
 
   function onUp(e: React.PointerEvent<SVGSVGElement>) {
     const info = ptrInfo.current;
+    const idx = dragIdxRef.current;
     if (info && !info.moved && onAxisTap) {
       // Short tap — toggle axis panel
-      if (dragIdx !== null && dragIdx >= 0) {
+      if (idx !== null && idx >= 0) {
         // tapped a handle
-        onAxisTap(DIMENSIONS[dragIdx].key);
+        onAxisTap(DIMENSIONS[idx].key);
       } else {
         // tapped background — find nearest axis by angle
         const p = toSVG(e.clientX, e.clientY);
         const a = ((Math.atan2(p.y - CY, p.x - CX) + Math.PI / 2) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
-        const idx = Math.round((a / (2 * Math.PI)) * N) % N;
-        onAxisTap(DIMENSIONS[idx].key);
+        const idxNearest = Math.round((a / (2 * Math.PI)) * N) % N;
+        onAxisTap(DIMENSIONS[idxNearest].key);
       }
     }
     ptrInfo.current = null;
+    dragAnchor.current = null;
+    dragIdxRef.current = null;
     setDragIdx(null);
   }
 
@@ -184,14 +205,14 @@ export function RadarChart({ values, locked, onAxisTap, onAxisHover, onChange, a
               width={40} height={18}
               fill="transparent"
             />
-            <text x={lx} y={ly + 3}
+            <text x={lx} y={ly + 4}
               textAnchor={anchor}
-              fontFamily="Nunito, sans-serif" fontWeight="700" fontSize={7}
+              fontFamily="Nunito, sans-serif" fontWeight="700" fontSize={10}
               fill={isActive ? '#ffe066' : locked ? '#9b89c4' : '#fdfcff'}
             >{d.short}</text>
-            <text x={lx} y={ly + 14}
+            <text x={lx} y={ly + 17}
               textAnchor={anchor}
-              fontFamily="Nunito, sans-serif" fontWeight="800" fontSize={10}
+              fontFamily="Nunito, sans-serif" fontWeight="800" fontSize={13}
               fill={isActive ? '#ffe066' : locked ? '#7a6fa0' : '#ffe066'}
             >{values[d.key]}</text>
           </g>
