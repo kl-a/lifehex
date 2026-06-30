@@ -155,17 +155,17 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
               <span style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: result.colour }}>
                 ✦ {result.dimensionLabel}
               </span>
-              <div style={{ display: 'flex', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   onClick={handleSpin}
                   disabled={isSpinning}
-                  style={{ fontSize: 20, color: '#9b89c4', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, opacity: isSpinning ? 0.4 : 1 }}
+                  style={{ fontSize: 16, color: '#9b89c4', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1, opacity: isSpinning ? 0.4 : 1 }}
                 >
                   ↺
                 </button>
                 <button
                   onClick={() => setDismissed(true)}
-                  style={{ fontSize: 18, color: '#9b89c4', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}
+                  style={{ fontSize: 15, color: '#9b89c4', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 1 }}
                 >
                   ✕
                 </button>
@@ -173,27 +173,36 @@ export function ActivityRoulette({ lowestDimension }: ActivityRouletteProps) {
             </div>
 
             {/* Activity text */}
-            <div style={{
-              fontFamily: 'Nunito, sans-serif',
-              fontSize: 13,
-              fontWeight: 700,
-              color: '#fdfcff',
-              lineHeight: 1.3,
-              textAlign: 'center',
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-            }}>
-              {isSpinning ? (
-                <span style={{ color: result.colour, fontFamily: "'Press Start 2P', monospace", fontSize: 9 }}>
+            {isSpinning ? (
+              <div style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <span style={{ color: result.colour, fontFamily: "'Press Start 2P', monospace", fontSize: 8 }}>
                   {result.dimensionLabel}
                 </span>
-              ) : (
-                `"${result.activity}"`
-              )}
-            </div>
+              </div>
+            ) : (
+              <div style={{
+                fontFamily: 'Nunito, sans-serif',
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#fdfcff',
+                lineHeight: 1.35,
+                textAlign: 'center',
+                flex: 1,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+                alignSelf: 'center',
+                width: '100%',
+              }}>
+                {`"${result.activity}"`}
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
